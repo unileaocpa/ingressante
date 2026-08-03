@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+  QUESTIONÁRIO DE PERFIL DO ALUNO INGRESSANTE
+  Centro Universitário Doutor Leão Sampaio (UNILEÃO)
+  Comissão Própria de Avaliação (CPA)
+
+  Instrumento : Perfil do Aluno Ingressante, edição com cadernos por área
+  Versão      : 2.1 (web)
+  Geração     : 30 de julho de 2026
+  Base legal  : Lei nº 10.861/2004 (SINAES); Lei nº 13.709/2018 (LGPD)
+================================================================================
+
+  COMO USAR
+  ---------
+  1. Salve este arquivo como .html e abra no navegador. Funciona offline.
+  2. Para coletar as respostas em um servidor, edite CONFIG.ENDPOINT abaixo.
+  3. Sem endpoint configurado, o formulário gera JSON e CSV para download,
+     que é o modo de teste ou de aplicação assistida.
+
+  CONFIGURAÇÃO DO ENVIO
+  ---------------------
+  CONFIG.ENDPOINT   URL que receberá o POST. Exemplos de destino:
+                    - Google Apps Script publicado como aplicativo web
+                    - função serverless (Vercel, Netlify, Cloud Functions)
+                    - rota própria da instituição
+  CONFIG.MODO_ENVIO 'endpoint'  envia e não baixa arquivo
+                    'download'  apenas baixa arquivo, sem enviar
+                    'ambos'     tenta enviar e, se falhar, baixa o arquivo
+  Observação: o POST usa Content-Type text/plain para evitar a requisição
+  preflight de CORS, que é o que costuma bloquear Google Apps Script.
+  Se o seu endpoint exigir JSON, troque em enviarParaEndpoint().
+
+  ONDE EDITAR O CONTEÚDO
+  ----------------------
+  Todo o instrumento está na constante SECOES, mais abaixo. Cada item tem:
+    id    nome do campo nos dados coletados
+    num   numeração impressa (1.1, 5.6.1, S.4.1.a ...)
+    txt   enunciado
+    tipo  radio | check | escala | matriz | texto | numero | textarea | rank3
+    anc   ancoragem no Instrumento de Avaliação de Cursos do INEP
+  Alterar enunciado NÃO quebra a coleta. Alterar "id" quebra a série
+  histórica: só faça isso com registro no quadro de rastreabilidade da CPA.
+
+  MODO AUDITORIA
+  --------------
+  Abra a página com ?modo=auditoria para exibir, sob cada item, a dimensão,
+  o objeto, o atributo e o qualificador do INEP a que ele atende. O estudante
+  nunca vê isso: sem o parâmetro, as ancoragens não são renderizadas.
+
+  LÓGICA CONDICIONAL, COMO TESTAR
+  -------------------------------
+  a) Escolha "Medicina": aparece o Caderno S com o complemento de Medicina.
+  b) Troque para "Direito": o Caderno S desaparece e entra o Caderno N com o
+     complemento de Direito, em tempo real.
+  c) Escolha "Educação Física": o campo Grau passa a ser exigido. Bacharelado
+     leva ao Caderno S; Licenciatura leva ao Caderno E.
+  d) Escolha "Medicina Veterinária": entra o Caderno V, com o aviso de que a
+     Dimensão 4 da área 08 ainda não foi consolidada pelo INEP.
+  e) Marque modalidade EaD ou Híbrido: o Módulo B passa a ser exibido.
+  f) No Bloco V, marque "Prefiro não responder": as questões 5.1 a 5.4 saem
+     de cena. Marcando "Sim" em 5.1 ou 5.1.1, entram 5.2 a 5.4.
+================================================================================
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questionário de Perfil do Aluno Ingressante · UNILEÃO</title>
+<meta name="description" content="Instrumento de avaliação institucional aplicado aos estudantes ingressantes da UNILEÃO, conduzido pela Comissão Própria de Avaliação.">
+<style>
+/* ===========================================================================
+   TOKENS
+   Paleta de documento institucional: papel levemente quente, tinta ardósia,
+   um único acento verde-pinho para marcações de protocolo, e um tom de brasa
+   reservado exclusivamente para erro e obrigatoriedade.
+   Para adotar as cores da instituição, troque --selo e --selo-claro.
+   =========================================================================== */
+:root{
+  --papel:#FBFAF7;
+  --campo:#FFFFFF;
+  --tinta:#1B2430;
+  --tinta-media:#4A5666;
+  --tinta-fraca:#78838F;
+  --linha:#DDD8CE;
+  --linha-forte:#C4BDB0;
+  --selo:#17564A;
+  --selo-claro:#E7EFEB;
+  --brasa:#A8471E;
+  --brasa-clara:#FBEFE9;
+  --r:3px;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--papel);color:var(--tinta);
+  font-family:var(--sans);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.pular{position:absolute;left:-9999px}
+.pular:focus{left:8px;top:8px;z-index:99;background:var(--selo);color:#fff;padding:.6rem 1rem;border-radius:var(--r)}
+
+/* ---------- CABEÇALHO ---------- */
+.topo{border-bottom:1px solid var(--linha);background:var(--campo)}
+.topo-int{max-width:760px;margin:0 auto;padding:1.15rem 1.25rem .95rem;display:flex;gap:.9rem;align-items:flex-start}
+.marca{
+  flex:0 0 auto;width:46px;height:46px;border:1px solid var(--linha-forte);border-radius:var(--r);
+  display:grid;place-items:center;font-family:var(--serif);font-size:1.05rem;font-weight:700;
+  color:var(--selo);background:var(--selo-claro);letter-spacing:.02em;
+}
+.marca-nota{display:block;font-size:.58rem;color:var(--tinta-fraca);letter-spacing:.04em;text-align:center;margin-top:.15rem}
+.topo-txt{min-width:0}
+.instituicao{font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;color:var(--tinta-fraca);margin:0 0 .18rem}
+.titulo{font-family:var(--serif);font-size:1.32rem;line-height:1.2;margin:0;font-weight:600}
+.subtitulo{margin:.3rem 0 0;font-size:.82rem;color:var(--tinta-media)}
+.selo-aud{display:inline-block;margin-top:.4rem;font-size:.68rem;letter-spacing:.09em;text-transform:uppercase;
+  background:var(--brasa-clara);color:var(--brasa);border:1px solid var(--brasa);border-radius:var(--r);padding:.12rem .45rem}
+
+/* ---------- RÉGUA DE SEÇÕES (assinatura) ---------- */
+.regua{position:sticky;top:0;z-index:20;background:var(--campo);border-bottom:1px solid var(--linha)}
+.regua-int{max-width:760px;margin:0 auto;padding:.55rem 1.25rem .6rem}
+.regua-seg{display:flex;gap:3px;margin-bottom:.4rem}
+.seg{flex:1;height:4px;background:var(--linha);border-radius:2px;transition:background .2s}
+.seg.feita{background:var(--linha-forte)}
+.seg.atual{background:var(--selo)}
+.regua-txt{display:flex;justify-content:space-between;gap:1rem;font-size:.73rem;color:var(--tinta-fraca)}
+.regua-nome{color:var(--tinta-media);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- CORPO ---------- */
+main{max-width:760px;margin:0 auto;padding:1.5rem 1.25rem 8rem}
+.secao{display:none;animation:entra .16s ease-out}
+.secao.ativa{display:block}
+@keyframes entra{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.secao{animation:none}*{transition:none!important}}
+
+.secao-cab{margin:0 0 1.4rem;padding-bottom:.85rem;border-bottom:2px solid var(--tinta)}
+.secao-eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;color:var(--selo);text-transform:uppercase;margin:0 0 .3rem}
+.secao-tit{font-family:var(--serif);font-size:1.5rem;line-height:1.22;margin:0;font-weight:600}
+.secao-sub{margin:.55rem 0 0;font-size:.88rem;color:var(--tinta-media)}
+
+/* ---------- ITEM: número de protocolo pendurado ---------- */
+.item{display:grid;grid-template-columns:3.6rem 1fr;gap:0 .7rem;padding:1.05rem 0;border-bottom:1px solid var(--linha)}
+.item:last-child{border-bottom:0}
+.item.oculto{display:none}
+.item-num{font-family:var(--serif);font-size:1.02rem;font-weight:700;color:var(--selo);line-height:1.5;padding-top:.02rem}
+.item-corpo{min-width:0}
+.item-anc{grid-column:1/-1;margin-top:.55rem;font-family:var(--mono);font-size:.68rem;line-height:1.5;
+  color:var(--tinta-media);background:var(--selo-claro);border-left:3px solid var(--selo);padding:.4rem .55rem;border-radius:0 var(--r) var(--r) 0}
+.item-anc b{color:var(--selo);letter-spacing:.06em}
+.enunciado{margin:0;font-size:.99rem;line-height:1.45}
+.obrig{color:var(--brasa);font-weight:700;margin-left:.15rem}
+.nota{margin:.28rem 0 0;font-size:.79rem;color:var(--tinta-fraca);font-style:italic}
+.resp{margin-top:.7rem}
+
+/* ---------- CONTROLES ---------- */
+fieldset{border:0;margin:0;padding:0;min-width:0}
+legend{padding:0}
+.opcao{display:flex;gap:.6rem;align-items:flex-start;padding:.46rem .6rem;border:1px solid var(--linha);
+  border-radius:var(--r);background:var(--campo);margin-bottom:.34rem;cursor:pointer;font-size:.93rem;line-height:1.4}
+.opcao:hover{border-color:var(--linha-forte)}
+.opcao input{margin:.22rem 0 0;flex:0 0 auto;accent-color:var(--selo);width:1.05rem;height:1.05rem}
+.opcao.marcada{border-color:var(--selo);background:var(--selo-claro)}
+.opcao span{min-width:0}
+.grade2{display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:600px){.grade2{grid-template-columns:1fr 1fr;gap:0 .55rem}}
+
+input[type=text],input[type=email],input[type=number],select,textarea{
+  width:100%;font:inherit;font-size:.95rem;color:var(--tinta);background:var(--campo);
+  border:1px solid var(--linha-forte);border-radius:var(--r);padding:.55rem .65rem}
+textarea{min-height:5.5rem;resize:vertical}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--tinta-media) 50%),linear-gradient(135deg,var(--tinta-media) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 52%,calc(100% - 13px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:2.2rem}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,.opcao:focus-within{
+  outline:2px solid var(--selo);outline-offset:2px}
+.mini{max-width:11rem}
+
+/* escala e matriz: pastilhas que embrulham, sem tabela, para funcionar no celular */
+.escala-leg{display:flex;justify-content:space-between;gap:1rem;font-size:.74rem;color:var(--tinta-fraca);margin:0 0 .4rem}
+.pastilhas{display:flex;flex-wrap:wrap;gap:.3rem}
+.pastilha{position:relative;flex:1 1 auto;min-width:2.7rem}
+.pastilha input{position:absolute;opacity:0;width:100%;height:100%;left:0;top:0;margin:0;cursor:pointer}
+.pastilha span{display:block;text-align:center;padding:.45rem .35rem;font-size:.88rem;border:1px solid var(--linha-forte);
+  border-radius:var(--r);background:var(--campo);line-height:1.25}
+.pastilha input:checked+span{background:var(--selo);border-color:var(--selo);color:#fff;font-weight:600}
+.pastilha input:focus-visible+span{outline:2px solid var(--selo);outline-offset:2px}
+.pastilha.larga{min-width:6.2rem;flex:1 1 30%}
+
+.linha-m{padding:.6rem 0;border-top:1px dotted var(--linha)}
+.linha-m:first-child{border-top:0;padding-top:.2rem}
+.linha-m-rot{font-size:.9rem;margin:0 0 .4rem;line-height:1.35}
+.rank-linha{display:grid;grid-template-columns:2.6rem 1fr;gap:.5rem;align-items:center;margin-bottom:.45rem}
+.rank-ord{font-family:var(--serif);font-weight:700;color:var(--selo);font-size:.95rem}
+
+/* ---------- CAIXAS ---------- */
+.caixa{border:1px solid var(--linha-forte);border-left:4px solid var(--selo);background:var(--campo);
+  border-radius:0 var(--r) var(--r) 0;padding:.9rem 1rem;margin:0 0 1.2rem;font-size:.89rem;line-height:1.55}
+.caixa h3{margin:0 0 .45rem;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--selo)}
+.caixa p{margin:0 0 .55rem}
+.caixa p:last-child{margin-bottom:0}
+.caixa.alerta{border-left-color:var(--brasa);background:var(--brasa-clara)}
+.caixa.alerta h3{color:var(--brasa)}
+.caixa.rota{border-left-color:var(--linha-forte);background:var(--selo-claro);font-size:.85rem}
+
+/* ---------- FICHA DE ENQUADRAMENTO ---------- */
+.ficha{border:1px solid var(--linha-forte);background:var(--campo);border-radius:var(--r);margin:0 0 1.3rem;overflow:hidden}
+.ficha-cab{background:var(--tinta);color:#fff;padding:.5rem .85rem;font-size:.7rem;letter-spacing:.11em;text-transform:uppercase}
+.ficha dl{margin:0;padding:.55rem .85rem .7rem;display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:560px){.ficha dl{grid-template-columns:auto 1fr;column-gap:1.1rem}}
+.ficha dt{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-fraca);padding-top:.42rem}
+.ficha dd{margin:0;padding-bottom:.42rem;font-size:.93rem;font-weight:600}
+.ficha dd.vazio{font-weight:400;color:var(--tinta-fraca);font-style:italic}
+
+/* ---------- ERROS ---------- */
+.erro-msg{margin:.45rem 0 0;font-size:.83rem;color:var(--brasa);font-weight:600}
+.item.invalido{background:var(--brasa-clara);border-radius:var(--r);
+  box-shadow:inset 3px 0 0 var(--brasa);padding-left:.5rem;margin-left:-.5rem}
+.resumo-erro{border:1px solid var(--brasa);background:var(--brasa-clara);border-radius:var(--r);padding:.85rem 1rem;margin:0 0 1.2rem}
+.resumo-erro h3{margin:0 0 .45rem;font-size:.9rem;color:var(--brasa)}
+.resumo-erro ol{margin:0;padding-left:1.3rem;font-size:.87rem}
+.resumo-erro a{color:var(--brasa)}
+.resumo-erro.oculto{display:none}
+
+/* ---------- RODAPÉ DE NAVEGAÇÃO ---------- */
+.barra{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--campo);border-top:1px solid var(--linha-forte)}
+.barra-int{max-width:760px;margin:0 auto;padding:.7rem 1.25rem;display:flex;gap:.6rem;align-items:center}
+.barra-conta{font-size:.76rem;color:var(--tinta-fraca);margin-right:auto}
+button{font:inherit;font-size:.92rem;border-radius:var(--r);border:1px solid var(--tinta);background:var(--campo);
+  color:var(--tinta);padding:.55rem 1.1rem;cursor:pointer;font-weight:600}
+button:hover{background:var(--papel)}
+button.principal{background:var(--selo);border-color:var(--selo);color:#fff}
+button.principal:hover{background:#124039}
+button.discreto{border-color:var(--linha-forte);color:var(--tinta-media);font-weight:500;font-size:.82rem;padding:.42rem .7rem}
+button[disabled]{opacity:.45;cursor:not-allowed}
+
+/* ---------- FIM ---------- */
+.fim{text-align:center;padding:2rem 0}
+.fim-selo{font-family:var(--serif);font-size:2.6rem;color:var(--selo);margin:0 0 .5rem}
+.fim h2{font-family:var(--serif);font-size:1.4rem;margin:0 0 .7rem}
+.fim p{color:var(--tinta-media);font-size:.94rem;max-width:34rem;margin:0 auto .8rem}
+.protocolo{font-family:var(--mono);font-size:.82rem;background:var(--selo-claro);border:1px solid var(--linha-forte);
+  border-radius:var(--r);padding:.5rem .8rem;display:inline-block;margin-top:.4rem}
+.acoes-fim{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-top:1.2rem}
+
+.rodape{max-width:760px;margin:0 auto;padding:0 1.25rem 2rem;font-size:.75rem;color:var(--tinta-fraca);line-height:1.6}
+.rodape hr{border:0;border-top:1px solid var(--linha);margin:0 0 .9rem}
+.ferramentas{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.7rem}
+@media(max-width:420px){
+  .item{grid-template-columns:1fr}
+  .item-num{padding-top:0;margin-bottom:.15rem}
+}
+</style>
+</head>
+<body>
+<a class="pular" href="#conteudo">Ir para o questionário</a>
+
+<header class="topo">
+  <div class="topo-int">
+    <div>
+      <div class="marca" aria-hidden="true">UL</div>
+      <span class="marca-nota">logo</span>
+    </div>
+    <div class="topo-txt">
+      <p class="instituicao">Centro Universitário Doutor Leão Sampaio · CPA</p>
+      <h1 class="titulo">Questionário de Perfil do Aluno Ingressante</h1>
+      <p class="subtitulo">Avaliação institucional <span id="hSemestre">2025.2</span> · versão 2.1 · <span id="hData"></span></p>
+      <p id="seloAuditoria" class="selo-aud" hidden>Modo auditoria: ancoragens do INEP visíveis</p>
+    </div>
+  </div>
+</header>
+
+<nav class="regua" aria-label="Progresso do questionário">
+  <div class="regua-int">
+    <div class="regua-seg" id="regua" role="presentation"></div>
+    <p class="regua-txt">
+      <span class="regua-nome" id="reguaNome">Identificação</span>
+      <span id="reguaConta">Seção 1</span>
+    </p>
+  </div>
+</nav>
+
+<main id="conteudo">
+  <div class="resumo-erro oculto" id="resumoErro" role="alert" tabindex="-1">
+    <h3>Faltam respostas nesta seção</h3>
+    <ol id="listaErro"></ol>
+  </div>
+  <form id="form" novalidate>
+    <div id="secoes"></div>
+  </form>
+
+  <section class="fim" id="telaFim" hidden>
+    <p class="fim-selo" aria-hidden="true">✓</p>
+    <h2>Respostas registradas</h2>
+    <p>Obrigado por participar. As informações que você forneceu vão orientar as ações de acolhimento, nivelamento e apoio do seu curso ao longo do semestre.</p>
+    <p id="fimStatus"></p>
+    <p class="protocolo">Protocolo <span id="fimProtocolo"></span></p>
+    <div class="acoes-fim">
+      <button type="button" class="discreto" id="btnBaixarJson">Baixar minhas respostas (JSON)</button>
+      <button type="button" class="discreto" id="btnBaixarCsv">Baixar minhas respostas (CSV)</button>
+    </div>
+  </section>
+</main>
+
+<div class="barra" id="barra">
+  <div class="barra-int">
+    <span class="barra-conta" id="barraConta"></span>
+    <button type="button" id="btnAnterior">Anterior</button>
+    <button type="button" class="principal" id="btnProximo">Próximo</button>
+  </div>
+</div>
+
+<footer class="rodape">
+  <hr>
+  <p><strong>Comissão Própria de Avaliação · UNILEÃO</strong> · Juazeiro do Norte, Ceará.
+  Instrumento aplicado em atendimento à Lei nº 10.861/2004 (SINAES). Dados tratados de forma
+  pseudonimizada, nos termos da Lei nº 13.709/2018, e divulgados apenas em nível agregado.</p>
+  <div class="ferramentas">
+    <button type="button" class="discreto" id="btnRascunhoBaixar">Salvar rascunho em arquivo</button>
+    <button type="button" class="discreto" id="btnRascunhoCarregar">Retomar rascunho de arquivo</button>
+    <input type="file" id="inputRascunho" accept=".json" hidden>
+  </div>
+</footer>
+
+<script>
+"use strict";
+/* ===========================================================================
+   1. CONFIGURAÇÃO
+   =========================================================================== */
+const CONFIG = {
+  ENDPOINT: "https://script.google.com/macros/s/AKfycbzweDhA48AMZLewcmuuaXFspP5UuaxjQLbcHpLhiPD4WiVMpSkaAEdvXhr3xVvlyGRs/exec",                 // ex.: "https://script.google.com/macros/s/AAA.../exec"
+  MODO_ENVIO: "ambos",          // "endpoint" | "download" | "ambos"
+  FORMATO_DOWNLOAD: "ambos",    // "json" | "csv" | "ambos"
+  SEMESTRE: "2025.2",
+  VERSAO_INSTRUMENTO: "2.1",
+  NOME_INSTRUMENTO: "Perfil do Aluno Ingressante UNILEÃO"
+};
+
+const MODO_AUDITORIA = new URLSearchParams(location.search).get("modo") === "auditoria";
+
+/* ===========================================================================
+   2. ENQUADRAMENTO DOS CURSOS
+   Área geral conforme a Classificação Internacional Normalizada da Educação
+   adaptada ao Brasil (CINE Brasil), que é a base da Dimensão 4 do INEP.
+   Educação Física é o único curso cujo enquadramento depende do grau.
+   =========================================================================== */
+const AREAS = {
+  "01": "01 Educação",
+  "03": "03 Ciências Sociais, Comunicação e Informação",
+  "04": "04 Negócios, Administração e Direito",
+  "08": "08 Agricultura, Silvicultura, Pesca e Veterinária",
+  "09": "09 Saúde e Bem-Estar"
+};
+
+const CURSOS = [
+  { nome:"Administração",        graus:["Bacharelado"],               area:"04", caderno:"N", comp:"N41" },
+  { nome:"Biomedicina",          graus:["Bacharelado"],               area:"09", caderno:"S", comp:"S45" },
+  { nome:"Ciências Contábeis",   graus:["Bacharelado"],               area:"04", caderno:"N", comp:"N42" },
+  { nome:"Direito",              graus:["Bacharelado"],               area:"04", caderno:"N", comp:"N43" },
+  { nome:"Educação Física",      graus:["Bacharelado","Licenciatura"],
+    variantes:{ "Bacharelado":{area:"09",caderno:"S",comp:"S46"}, "Licenciatura":{area:"01",caderno:"E",comp:null} } },
+  { nome:"Enfermagem",           graus:["Bacharelado"],               area:"09", caderno:"S", comp:"S42" },
+  { nome:"Fisioterapia",         graus:["Bacharelado"],               area:"09", caderno:"S", comp:"S43" },
+  { nome:"Medicina",             graus:["Bacharelado"],               area:"09", caderno:"S", comp:"S41" },
+  { nome:"Medicina Veterinária", graus:["Bacharelado"],               area:"08", caderno:"V", comp:null },
+  { nome:"Odontologia",          graus:["Bacharelado"],               area:"09", caderno:"S", comp:"S44" },
+  { nome:"Psicologia",           graus:["Bacharelado"],               area:"03", caderno:"C", comp:"C4" }
+];
+
+function resolverEnquadramento(nomeCurso, grau){
+  const c = CURSOS.find(x => x.nome === nomeCurso);
+  if(!c) return null;
+  if(c.variantes){
+    if(!grau || !c.variantes[grau]) return { curso:c, indefinido:true };
+    const v = c.variantes[grau];
+    return { curso:c, grau, area:v.area, caderno:v.caderno, comp:v.comp };
+  }
+  return { curso:c, grau:c.graus[0], area:c.area, caderno:c.caderno, comp:c.comp };
+}
+
+/* ===========================================================================
+   3. ESCALAS REUTILIZADAS
+   =========================================================================== */
+const E5      = ["1","2","3","4","5"];
+const E5NA    = ["1","2","3","4","5","N/A"];
+const IDIOMAS = ["Nenhuma","Básica","Intermediária","Avançada","Fluente"];
+const IDIOMAS_DESC = "Básica: compreende frases simples. Intermediária: comunica-se em situações cotidianas. Avançada: lê textos técnicos da área. Fluente: atua profissionalmente no idioma.";
+const ESCOLARIDADE = ["Sem escolaridade","Ensino Fundamental incompleto","Ensino Fundamental completo",
+  "Ensino Médio incompleto","Ensino Médio completo","Ensino Superior incompleto","Ensino Superior completo",
+  "Pós-graduação","Não sei informar"];
+const FATORES_IES = ["Qualidade do corpo docente","Infraestrutura física e tecnológica",
+  "Reputação e tradição da instituição","Localização geográfica","Valor das mensalidades e política de bolsas",
+  "Avaliação do MEC (nota do curso)","Indicação de familiares, amigos ou egressos","Horário e turno ofertado",
+  "Oferta de estágios e parcerias profissionais","Outro"];
+const TEMAS_TRANSVERSAIS = [
+  "a) Sustentabilidade e responsabilidade socioambiental",
+  "b) Direitos humanos e relações étnico-raciais",
+  "c) Educação ambiental",
+  "d) História e cultura afro-brasileira, africana e indígena",
+  "e) Ética e conduta profissional",
+  "f) Tecnologias digitais e inteligência artificial",
+  "g) Inclusão de pessoas com deficiência"];
+
+/* ===========================================================================
+   4. O INSTRUMENTO
+   Enunciados idênticos à versão 2.1 impressa. Não alterar "id" sem registro.
+   =========================================================================== */
+const SECOES = [
+
+/* ---------------------------------------------------------------- IDENTIFICAÇÃO */
+{
+  id:"ident", eyebrow:"Antes de começar", titulo:"Identificação e consentimento",
+  sub:"Leia a apresentação e informe seus dados. O curso que você escolher define qual caderno de área aparece ao final do questionário.",
+  caixas:[
+    { tit:"Apresentação", corpo:[
+      "Este questionário integra a avaliação institucional do Centro Universitário Doutor Leão Sampaio, conduzida pela Comissão Própria de Avaliação (CPA), em atendimento à Lei nº 10.861/2004 (SINAES) e ao ciclo avaliativo do INEP/MEC. Suas respostas subsidiarão o aprimoramento do Projeto Pedagógico do Curso, do Plano de Desenvolvimento Institucional e das políticas de acolhimento, nivelamento e apoio estudantil.",
+      "O preenchimento é voluntário e tem caráter diagnóstico. Sua matrícula é solicitada para que a CPA possa acompanhar, de forma agregada, a eficácia das ações de acolhimento, nivelamento e apoio ao longo do curso. Nenhuma resposta individual será divulgada, compartilhada com a coordenação do curso ou com docentes, ou utilizada para qualquer finalidade avaliativa de desempenho. Os dados são tratados de forma pseudonimizada e os resultados são publicados apenas em nível agregado. Você pode solicitar a exclusão das suas respostas a qualquer momento, pelo canal institucional da CPA divulgado no portal do estudante.",
+      "Leva cerca de 12 minutos. Não há resposta certa ou errada: o objetivo é conhecer o seu ponto de partida, e não avaliar você."
+    ]}
+  ],
+  itens:[
+    { id:"matricula", num:"", txt:"Matrícula", tipo:"texto", obrig:true,
+      nota:"Como consta no seu comprovante de matrícula.",
+      anc:"<b>D1 · 1.9 · d.ii</b> chave de vinculação para mensurar permanência e desempenho · <b>D1 · 1.10 · a.iv</b>" },
+    { id:"email", num:"", txt:"E-mail institucional", tipo:"email", obrig:true,
+      anc:"<b>D1 · 1.8 · c.ii</b> disponibilização por meio de tecnologias digitais" },
+    { id:"curso", num:"", txt:"Curso", tipo:"select", obrig:true, opts:CURSOS.map(c=>c.nome),
+      nota:"Ao escolher, o caderno de área correspondente é habilitado automaticamente.",
+      anc:"<b>D1 · 1.8 · b.i</b> · <b>D2 · 2.7 · e.i</b> · <b>D4</b> define a área geral e o caderno" },
+    { id:"grau", num:"", txt:"Grau acadêmico", tipo:"select", obrig:true, opts:["Bacharelado","Licenciatura"],
+      nota:"Exigido apenas para Educação Física, que se enquadra em áreas gerais distintas conforme o grau.",
+      anc:"<b>D4</b> Bacharelado leva ao Caderno S; Licenciatura leva ao Caderno E" },
+    { id:"modalidade", num:"", txt:"Modalidade de oferta", tipo:"radio", obrig:true, opts:["Presencial","EaD","Híbrido"],
+      nota:"EaD e Híbrido habilitam o Módulo B ao final.",
+      anc:"<b>D1 · 1.2 · a.iii</b> · <b>D1 · 1.2 · f.ii</b> · <b>D1 · 1.6</b>" },
+    { id:"turno", num:"", txt:"Turno", tipo:"radio", obrig:true, opts:["Matutino","Vespertino","Noturno","Integral"],
+      anc:"<b>D1 · 1.9 · a.iii</b> · <b>D1 · 1.9 · d.ii</b> cruzamento com jornada de trabalho e transporte" },
+    { id:"campus", num:"", txt:"Campus ou unidade", tipo:"texto", obrig:false,
+      anc:"<b>D3 · 3.3 · a.i</b> ambientes de aprendizagem, inclusive nos polos" },
+    { id:"consentimento", num:"", txt:"Consentimento para participação", tipo:"check", obrig:true, min:1,
+      opts:["Li a apresentação, concordo em participar e autorizo o uso das minhas respostas para fins de avaliação institucional, nos termos descritos acima."],
+      anc:"<b>Lei nº 13.709/2018, art. 7º, I</b> consentimento do titular" }
+  ]
+},
+
+/* ---------------------------------------------------------------- BLOCO I */
+{
+  id:"b1", eyebrow:"Bloco I", titulo:"Identificação e perfil demográfico",
+  sub:"Estas informações são as chaves que permitem à CPA ler todos os demais dados sob a ótica da equidade.",
+  ancSecao:"<b>D1 · 1.9 · a.ii, a.iii e c.i</b> bloco habilitador das análises de equidade",
+  itens:[
+    { id:"q_1_1", num:"1.1", txt:"Idade", tipo:"numero", obrig:true, sufixo:"anos completos", min:14, max:100,
+      anc:"<b>D1 · 1.9 · a.ii</b> · <b>D1 · 1.9 · a.iii</b>" },
+    { id:"q_1_2", num:"1.2", txt:"Sexo", tipo:"radio", obrig:true, linha:true,
+      opts:["Feminino","Masculino","Prefiro não informar"],
+      anc:"<b>D1 · 1.9 · c.i</b> · <b>D1 · 1.9 · a.iii</b>" },
+    { id:"q_1_3", num:"1.3", txt:"Cor ou raça", tipo:"radio", obrig:true, grade:true,
+      nota:"Autodeclaração, conforme categorias do IBGE.",
+      opts:["Branca","Preta","Parda","Amarela","Indígena","Prefiro não informar"],
+      anc:"<b>D1 · 1.9 · c.i</b> inclusão de segmentos sociais historicamente discriminados · <b>D1 · 1.2 · g.iii e g.iv</b> · <b>D4-E · 4.1 · b.ii e d.i</b> · <b>D4-C · 4.1 · b.iii</b>" },
+    { id:"q_1_4_municipio", num:"1.4", txt:"Município de residência atual", tipo:"texto", obrig:true,
+      anc:"<b>D1 · 1.9 · a.iii</b> · <b>D1 · 1.1 · d.i</b> necessidades loco-regionais" },
+    { id:"q_1_4_zona", num:"", txt:"Zona de residência", tipo:"radio", obrig:true, linha:true, opts:["Urbana","Rural"],
+      anc:"<b>D1 · 1.9 · a.iii</b> · <b>D1 · 1.9 · d.ii</b> preditor de permanência" },
+    { id:"q_1_5", num:"1.5", txt:"Transporte que utilizará para frequentar o curso", tipo:"check", obrig:true, min:1, grade:true,
+      nota:"Marque todas as opções que se aplicam.",
+      opts:["A pé","Bicicleta","Transporte público","Veículo próprio","Carona ou aplicativo","Transporte universitário","Não se aplica"],
+      anc:"<b>D1 · 1.9 · a.iii</b> · <b>D1 · 1.9 · d.ii</b>" },
+    { id:"q_1_6", num:"1.6", txt:"Filhos ou dependentes sob sua responsabilidade", tipo:"radio", obrig:true, linha:true,
+      opts:["Não","1","2","3 ou mais"],
+      anc:"<b>D1 · 1.9 · a.iii</b> · <b>D1 · 1.9 · d.ii</b> · <b>D1 · 1.9 · b.ii</b>" }
+  ]
+},
+
+/* ---------------------------------------------------------------- BLOCO II */
+{
+  id:"b2", eyebrow:"Bloco II", titulo:"Perfil socioeconômico e contexto de trabalho e estudo",
+  sub:"Perguntas sobre as condições em que você vai estudar ao longo do curso.",
+  ancSecao:"<b>D1 · 1.9 · a.iii</b> diferentes realidades socioeconômicas e culturais durante a vida acadêmica",
+  itens:[
+    { id:"q_2_1", num:"2.1", txt:"Renda mensal total da família, somando os rendimentos de todos os moradores", tipo:"radio", obrig:true, grade:true,
+      nota:"SM = salário mínimo vigente.",
+      opts:["Até 1,5 SM","1,5 a 3 SM","3 a 4,5 SM","4,5 a 6 SM","6 a 10 SM","10 a 30 SM","Acima de 30 SM"],
+      anc:"<b>D1 · 1.9 · a.iii</b> · <b>D1 · 1.9 · c.i</b> · faixas compatíveis com o Questionário do Estudante do ENADE" },
+    { id:"q_2_2", num:"2.2", txt:"Quantas pessoas vivem com essa renda, incluindo você?", tipo:"numero", obrig:true, sufixo:"pessoas", min:1, max:30,
+      anc:"<b>D1 · 1.9 · a.iii</b> lido em par com 2.1, permite calcular a renda familiar per capita" },
+    { id:"q_2_3_pai", num:"2.3", txt:"Escolaridade do pai ou responsável masculino", tipo:"radio", obrig:true, opts:ESCOLARIDADE,
+      anc:"<b>D1 · 1.9 · a.iii</b> realidades culturais · <b>D1 · 1.9 · a.iv</b>" },
+    { id:"q_2_3_mae", num:"", txt:"Escolaridade da mãe ou responsável feminina", tipo:"radio", obrig:true, opts:ESCOLARIDADE,
+      anc:"<b>D1 · 1.9 · a.iii</b> · <b>D1 · 1.9 · a.iv</b>" },
+    { id:"q_2_4", num:"2.4", txt:"Situação atual de trabalho", tipo:"radio", obrig:true,
+      opts:["Não trabalho","Trabalho eventualmente","Até 20h por semana","21 a 39h por semana","40h ou mais"],
+      anc:"<b>D1 · 1.9 · a.iii</b> condição de exercício do estudo · <b>D1 · 1.9 · d.ii</b>" },
+    { id:"q_2_5", num:"2.5", txt:"Como pretende custear o curso?", tipo:"check", obrig:true, min:1, max:2, grade:true,
+      nota:"Marque até 2 opções.",
+      opts:["Recursos próprios","Apoio da família","FIES","PROUNI","Bolsa institucional","Financiamento privado","Ainda não defini","Outro"],
+      anc:"<b>D1 · 1.9 · a.iii</b> · <b>D1 · 1.9 · b.ii</b> ações de intermediação" },
+    { id:"q_2_6", num:"2.6", txt:"É a primeira pessoa da sua família a cursar ensino superior?", tipo:"radio", obrig:true, linha:true,
+      opts:["Sim","Não","Não sei informar"],
+      anc:"<b>D1 · 1.9 · c.i</b> igualdade de oportunidades · <b>D1 · 1.9 · b.ii</b>" },
+    { id:"q_2_7a", num:"2.7", txt:"Acesso domiciliar à internet de qualidade", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 não tenho","5 acesso pleno"],
+      anc:"<b>D1 · 1.7 · a.ii</b> inclusão digital · <b>D1 · 1.9 · b.vi</b> letramento digital · <b>D3 · 3.4 · a.iii</b>" },
+    { id:"q_2_7b", num:"", txt:"Equipamento individual disponível (notebook, tablet ou computador)", tipo:"radio", obrig:true,
+      opts:["Próprio e exclusivo","Compartilhado com a família","Apenas smartphone","Não possuo"],
+      anc:"<b>D1 · 1.7 · a.ii</b> · <b>D3 · 3.4 · a.i</b> dimensionamento da demanda por laboratórios" }
+  ]
+},
+
+/* ---------------------------------------------------------------- BLOCO III */
+{
+  id:"b3", eyebrow:"Bloco III", titulo:"Histórico e escolha da instituição e do curso",
+  sub:"Como você chegou até aqui e o que pesou na sua decisão.",
+  ancSecao:"<b>D1 · 1.9 · a.ii</b> coerência do acolhimento com o perfil dos ingressantes · <b>D1 · 1.8 · d.i</b>",
+  itens:[
+    { id:"q_3_1", num:"3.1", txt:"A UNILEÃO foi sua 1ª opção de instituição?", tipo:"radio", obrig:true,
+      opts:["Sim","Não, era 2ª opção","Não, era opção mais distante"],
+      anc:"<b>D1 · 1.9 · a.ii</b> · <b>D1 · 1.8 · d.i</b>" },
+    { id:"q_3_2", num:"3.2", txt:"Este curso foi sua 1ª opção de carreira?", tipo:"radio", obrig:true,
+      opts:["Sim","Não, mas é da mesma área de interesse","Não, escolhi por viabilidade"],
+      anc:"<b>D1 · 1.9 · a.ii</b> · <b>D1 · 1.10 · c.i</b> aciona o aconselhamento vocacional · <b>D1 · 1.9 · d.ii</b>" },
+    { id:"q_3_3", num:"3.3", txt:"Já iniciou outro curso superior anteriormente?", tipo:"radio", obrig:true,
+      opts:["Não","Sim, concluí","Sim, não concluí","Sim, em andamento"],
+      anc:"<b>D1 · 1.9 · a.ii</b> · <b>D1 · 1.9 · a.iv</b> · <b>D1 · 1.9 · d.ii</b>" },
+    { id:"q_3_4", num:"3.4", txt:"Nível de conhecimento sobre o curso escolhido, quanto a atuação e mercado de trabalho", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhum","5 aprofundado"],
+      anc:"<b>D1 · 1.11 · a.iii</b> ambiente profissional · <b>D1 · 1.10 · c.i</b> · <b>D1 · 1.10 · d.i</b>" },
+    { id:"q_3_5", num:"3.5", txt:"Entre os fatores abaixo, escolha os três mais decisivos na sua escolha pela UNILEÃO e ordene-os", tipo:"rank3", obrig:true,
+      opts:FATORES_IES, nota:"1º é o mais decisivo. Não repita a mesma opção.",
+      anc:"<b>D1 · 1.8 · a.ii</b> · <b>D1 · 1.8 · d.i</b> · <b>D2 · 2.1 · a.ii</b> apenas quanto ao fator corpo docente, que mede reputação percebida · <b>D1 · 1.9 · a.ii</b>" },
+    { id:"q_3_6", num:"3.6", txt:"Importância de cada fator na sua escolha pelo curso", tipo:"matriz", obrig:true,
+      escala:E5NA, extremos:["1 nada importante","5 muito importante"],
+      linhas:[
+        {id:"q_3_6_a", rot:"a) Identificação e vocação pessoal", anc:"<b>D1 · 1.11 · a.iv</b>"},
+        {id:"q_3_6_b", rot:"b) Empregabilidade e mercado de trabalho", anc:"<b>D1 · 1.10 · d.i</b> · <b>D1 · 1.13 · c.i</b>"},
+        {id:"q_3_6_c", rot:"c) Expectativa de remuneração", anc:"<b>D1 · 1.13 · a.ii</b>"},
+        {id:"q_3_6_d", rot:"d) Influência familiar", anc:"<b>D1 · 1.9 · a.iii</b>"},
+        {id:"q_3_6_e", rot:"e) Contribuição e transformação social", anc:"<b>D1 · 1.1 · d.ii</b> · <b>D1 · 1.2 · e.iii</b>"},
+        {id:"q_3_6_f", rot:"f) Possibilidade de empreender na área", anc:"<b>D1 · 1.1 · e.i</b> · <b>D4-N · 4.2 · d.i</b>"},
+        {id:"q_3_6_g", rot:"g) Possibilidade de atuação internacional", anc:"<b>D1 · 1.14 · b.iv</b>"}
+      ],
+      anc:"<b>D1 · 1.11 · a.iv</b> devolutiva de estudantes na avaliação do perfil do egresso · <b>D1 · 1.12 · a.iii</b>" },
+    { id:"q_3_7", num:"3.7", txt:"Em uma palavra, descreva sua principal expectativa com o curso", tipo:"texto", obrig:true,
+      nota:"Apenas uma palavra.",
+      anc:"<b>D1 · 1.8 · d.i</b> destinado a tratamento lexicométrico, conforme Anexo A.4" }
+  ]
+},
+
+/* ---------------------------------------------------------------- BLOCO IV */
+{
+  id:"b4", eyebrow:"Bloco IV", titulo:"Bagagem acadêmica e conhecimentos prévios",
+  sub:"Serve para desenhar as ações de nivelamento do primeiro semestre. Responda com sinceridade: quem sinaliza dificuldade recebe apoio, não avaliação.",
+  ancSecao:"<b>D1 · 1.9 · a.iv</b> necessidades de nivelamento e demandas de suporte decorrentes dos níveis anteriores de educação. Componente perceptual: a aferição de desempenho depende da prova diagnóstica prevista no Anexo A.8.",
+  itens:[
+    { id:"q_4_1", num:"4.1", txt:"Tipo de escola em que cursou o Ensino Médio", tipo:"radio", obrig:true,
+      opts:["Todo em escola pública","Maior parte em escola pública","Metade pública, metade privada","Maior parte em escola privada","Todo em escola privada"],
+      anc:"<b>D1 · 1.9 · a.iv</b> deficiências resultantes dos níveis anteriores de educação · <b>D1 · 1.9 · a.iii</b>" },
+    { id:"q_4_2", num:"4.2", txt:"Há quanto tempo concluiu o Ensino Médio?", tipo:"radio", obrig:true, grade:true,
+      opts:["Menos de 1 ano","1 a 3 anos","4 a 7 anos","8 a 15 anos","Mais de 15 anos"],
+      anc:"<b>D1 · 1.9 · a.iv</b> · <b>D1 · 1.9 · b.i</b> distingue lacuna de formação de perda de fluência por desuso · <b>D1 · 1.9 · d.ii</b>" },
+    { id:"q_4_3", num:"4.3", txt:"Cursou Ensino Médio integrado a curso técnico ou profissionalizante?", tipo:"radio", obrig:true,
+      opts:["Não","Sim, na mesma área deste curso","Sim, em outra área"],
+      anc:"<b>D1 · 1.9 · a.ii</b> · <b>D4</b> repertório prévio na área, conforme o caderno aplicado" },
+    { id:"q_4_4", num:"4.4", txt:"Frequentou cursinho preparatório?", tipo:"radio", obrig:true, grade:true,
+      opts:["Não","Menos de 6 meses","6 a 12 meses","Mais de 1 ano"],
+      anc:"<b>D1 · 1.9 · a.iv</b> · <b>D1 · 1.9 · a.iii</b>" },
+    { id:"q_4_5", num:"4.5", txt:"Proficiência em idiomas", tipo:"matriz", obrig:true, escala:IDIOMAS, largas:true,
+      nota:IDIOMAS_DESC,
+      linhas:[
+        {id:"q_4_5_a", rot:"a) Língua inglesa", anc:"<b>D1 · 1.14 · b.iv</b> viabilidade linguística da mobilidade"},
+        {id:"q_4_5_b", rot:"b) Língua espanhola", anc:"<b>D1 · 1.14 · b.iv</b>"},
+        {id:"q_4_5_c", rot:"c) Libras (Língua Brasileira de Sinais)", anc:"<b>D1 · 1.2 · h.iv</b> · <b>D1 · 1.9 · b.iii</b> · <b>D4-E · 4.2 · b.ii e b.iii</b>"}
+      ],
+      anc:"<b>D1 · 1.14 · b.iv</b> · <b>D1 · 1.2 · h.iv</b> · <b>D4-E · 4.2</b>" },
+    { id:"q_4_5_d_nome", num:"", txt:"Outro idioma, se houver", tipo:"texto", obrig:false, anc:"<b>D1 · 1.14 · b.iv</b>" },
+    { id:"q_4_6", num:"4.6", txt:"Autoavaliação de competências", tipo:"matriz", obrig:true,
+      escala:E5, extremos:["1 muito baixa","5 muito alta"],
+      linhas:[
+        {id:"q_4_6_a", rot:"a) Leitura e interpretação de textos em Língua Portuguesa", anc:"<b>D1 · 1.9 · a.iv</b> · <b>D1 · 1.4 · c.iii</b>"},
+        {id:"q_4_6_b", rot:"b) Produção textual e redação em norma culta", anc:"<b>D1 · 1.9 · b.i</b> · <b>D1 · 1.4 · c.iii</b>"},
+        {id:"q_4_6_c", rot:"c) Raciocínio lógico-matemático", anc:"<b>D1 · 1.9 · a.iv</b> · <b>D1 · 1.9 · b.i</b>"},
+        {id:"q_4_6_d", rot:"d) Compreensão de gráficos, tabelas e dados", anc:"<b>D4-C · 4.1 · d.i</b> · <b>D4-C · 4.3 · b.i</b>"},
+        {id:"q_4_6_e", rot:"e) Pensamento crítico e argumentação", anc:"<b>D1 · 1.3 · f.ii</b> · <b>D4-C · 4.2 · b.i</b>"},
+        {id:"q_4_6_f", rot:"f) Letramento digital (ambiente virtual, editores de texto e planilhas)", anc:"<b>D1 · 1.9 · b.vi</b> · <b>D1 · 1.7 · a.i e a.ii</b>"},
+        {id:"q_4_6_g", rot:"g) Uso de ferramentas de inteligência artificial em atividades de estudo", anc:"<b>D3 · 3.4 · d.ii</b> · <b>D1 · 1.7 · f.ii</b>"},
+        {id:"q_4_6_h", rot:"h) Compreensão dos limites, riscos e implicações éticas da inteligência artificial", anc:"<b>D3 · 3.4 · d.ii</b> · <b>D1 · 1.7 · f.ii</b> · <b>D1 · 1.2 · g.ii</b>"},
+        {id:"q_4_6_i", rot:"i) Trabalho em equipe e habilidades socioemocionais", anc:"<b>D1 · 1.9 · b.v</b> · <b>D4-S · 4.1 · e.i</b> · <b>D4-N · 4.4 · b.i</b>"}
+      ],
+      anc:"<b>D1 · 1.9 · a.iv</b> · <b>D1 · 1.9 · b.i</b> · <b>D1 · 1.4 · c.iii</b> lacunas de aprendizagem" },
+    { id:"q_4_7", num:"4.7", txt:"Frequência de hábitos de leitura para lazer", tipo:"radio", obrig:true, grade:true,
+      opts:["Diariamente","Semanalmente","Mensalmente","Raramente","Não tenho o hábito"],
+      anc:"<b>D3 · 3.6 · h.ii</b> incentivo ao uso do acervo · <b>D3 · 3.9 · c.iv</b> estudo extraclasse" },
+    { id:"q_4_8", num:"4.8", txt:"Em quais áreas você considera que precisaria de apoio ou nivelamento no início do curso?", tipo:"check", obrig:true, min:1, grade:true,
+      nota:"Marque todas as que se aplicam.",
+      opts:["Leitura e interpretação de textos","Produção textual e redação","Matemática básica","Raciocínio lógico",
+        "Interpretação de gráficos e dados","Informática e uso do ambiente virtual","Métodos de estudo e organização do tempo",
+        "Língua estrangeira","Não considero necessário apoio neste momento"],
+      anc:"<b>D1 · 1.9 · b.i</b> ações de nivelamento · <b>D1 · 1.9 · a.iv</b> · <b>D1 · 1.4 · c.iii</b>" },
+    { id:"q_4_8_1", num:"4.8.1", txt:"Deseja detalhar alguma dificuldade específica?", tipo:"textarea", obrig:false,
+      nota:"Opcional.",
+      anc:"<b>D1 · 1.9 · a.iv</b> · <b>D1 · 1.8 · d.i</b>" }
+  ]
+},
+
+/* ---------------------------------------------------------------- BLOCO V */
+{
+  id:"b5", eyebrow:"Bloco V", titulo:"Acessibilidade, inclusão e expectativas de infraestrutura",
+  sub:"A primeira parte trata de acessibilidade e é facultativa. A segunda registra o que você espera encontrar no curso.",
+  ancSecao:"<b>D1 · 1.9 · b.iii, b.iv e c.ii</b> · <b>D3 · 3.5 · a.iv</b>. O quadro 5.5 mede expectativa e não evidencia 3.3.a.v, 3.4.b.i nem 3.5.e.",
+  caixas:[
+    { alerta:true, tit:"Consentimento para tratamento de dados pessoais sensíveis", corpo:[
+      "As questões 5.1 a 5.4 tratam de informações sobre deficiência, neurodivergência e condições de saúde, classificadas como dados pessoais sensíveis pela Lei nº 13.709/2018 (LGPD).",
+      "Sua resposta é facultativa e a finalidade é exclusivamente o planejamento de acessibilidade, adaptações pedagógicas e apoio ao estudante. Esses dados são acessados apenas pela equipe técnica responsável pelo apoio estudantil, não integram registros acadêmicos de desempenho e podem ser revogados a qualquer momento mediante solicitação à CPA."
+    ]}
+  ],
+  itens:[
+    { id:"q_5_consent", num:"", txt:"Sobre as questões 5.1 a 5.4", tipo:"radio", obrig:true,
+      opts:["Li e concordo em responder","Prefiro não responder a este segmento"],
+      anc:"<b>Lei nº 13.709/2018, art. 5º, II e art. 11, I</b> consentimento específico e destacado" },
+    { id:"q_5_1", num:"5.1", txt:"Você possui alguma deficiência, transtorno do espectro autista, altas habilidades ou superdotação, ou outra neurodivergência?", tipo:"radio", obrig:true,
+      nota:"Autodeclaração de condição.", opts:["Não","Sim","Prefiro não informar"],
+      cond:{campo:"q_5_consent", em:["Li e concordo em responder"]},
+      anc:"<b>D1 · 1.9 · c.ii</b> rol literal do qualificador · <b>D3 · 3.5 · a.iv</b> · Censo da Educação Superior" },
+    { id:"q_5_1_1", num:"5.1.1", txt:"Você considera que necessitará de algum tipo de adaptação, recurso ou apoio para acompanhar as atividades do curso?", tipo:"radio", obrig:true,
+      nota:"Declaração de demanda de apoio.", opts:["Não","Sim","Ainda não sei"],
+      cond:{campo:"q_5_consent", em:["Li e concordo em responder"]},
+      anc:"<b>D1 · 1.9 · b.iii</b> acessibilidade metodológica atitudinal · <b>D1 · 1.3 · a.v</b> retirada de barreiras" },
+    { id:"__rota_5", tipo:"rota", txt:"As questões 5.2 a 5.4 aparecem apenas para quem respondeu Sim em 5.1 ou em 5.1.1.",
+      cond:{campo:"q_5_consent", em:["Li e concordo em responder"]} },
+    { id:"q_5_2_deficiencia", num:"5.2", txt:"Deficiência, autodeclaração PcD", tipo:"check", obrig:false, grade:true,
+      opts:["Visual","Auditiva","Física ou motora","Intelectual","Múltipla"],
+      cond:{qualquer:[{campo:"q_5_1",em:["Sim"]},{campo:"q_5_1_1",em:["Sim"]}]},
+      anc:"<b>D1 · 1.9 · c.ii</b> · <b>D3 · 3.5 · a.iv</b> design universal · <b>D1 · 1.3 · a.v</b>" },
+    { id:"q_5_2_neuro", num:"", txt:"Neurodivergência", tipo:"check", obrig:false, grade:true,
+      opts:["TEA","TDAH","Dislexia","Discalculia","Altas habilidades ou superdotação"],
+      cond:{qualquer:[{campo:"q_5_1",em:["Sim"]},{campo:"q_5_1_1",em:["Sim"]}]},
+      anc:"<b>D1 · 1.9 · c.ii</b> · <b>D3 · 3.5 · a.iv</b>" },
+    { id:"q_5_2_outra", num:"", txt:"Outra condição de saúde relevante para adaptação pedagógica", tipo:"texto", obrig:false,
+      cond:{qualquer:[{campo:"q_5_1",em:["Sim"]},{campo:"q_5_1_1",em:["Sim"]}]},
+      anc:"<b>D1 · 1.9 · c.ii</b>" },
+    { id:"q_5_3", num:"5.3", txt:"Recursos e apoios necessários", tipo:"check", obrig:true, min:1, grade:true,
+      nota:"Marque todas as opções que se aplicam.",
+      opts:["Intérprete de Libras","Leitor de tela","Material ampliado ou Braille","Audiodescrição","Apoio psicopedagógico",
+        "Adaptação pedagógica ou curricular","Tempo adicional em avaliações","Outro","Não necessito de recurso específico"],
+      cond:{qualquer:[{campo:"q_5_1",em:["Sim"]},{campo:"q_5_1_1",em:["Sim"]}]},
+      anc:"<b>D1 · 1.7 · a.iii</b> tecnologias assistivas · <b>D1 · 1.9 · b.iii</b> · <b>D1 · 1.9 · b.iv</b> · <b>D3 · 3.5 · b.ii</b> · <b>D4-E · 4.2</b>" },
+    { id:"q_5_4", num:"5.4", txt:"Adaptações específicas que considera importante sinalizar", tipo:"textarea", obrig:false,
+      nota:"Opcional.",
+      cond:{qualquer:[{campo:"q_5_1",em:["Sim"]},{campo:"q_5_1_1",em:["Sim"]}]},
+      anc:"<b>D1 · 1.9 · b.iii</b> · <b>D1 · 1.8 · d.i</b>" },
+    { id:"q_5_5", num:"5.5", txt:"Considerando que você está iniciando o curso, indique o grau de importância que você espera que cada recurso tenha na sua formação", tipo:"matriz", obrig:true,
+      nota:"Não se trata de avaliar os recursos da instituição, que você ainda não utilizou, mas de registrar sua expectativa inicial.",
+      escala:E5, extremos:["1 pouco importante","5 muito importante"],
+      linhas:[
+        {id:"q_5_5_a", rot:"a) Salas de aula (conforto térmico, iluminação, mobiliário)", anc:"<b>D3 · 3.3 · a.iii e a.iv</b>"},
+        {id:"q_5_5_b", rot:"b) Laboratórios específicos do curso", anc:"<b>D3 · 3.4 · a.i</b> · <b>D4-S · 4.3</b>"},
+        {id:"q_5_5_c", rot:"c) Biblioteca (acervo físico e virtual)", anc:"<b>D3 · 3.6 · f.iv</b> · <b>D3 · 3.9 · a e d.i</b>"},
+        {id:"q_5_5_d", rot:"d) Equipamentos de informática e Wi-Fi disponíveis", anc:"<b>D3 · 3.4 · a.iii e a.iv</b> · <b>D3 · 3.4 · c.i</b>"},
+        {id:"q_5_5_e", rot:"e) Ambiente Virtual de Aprendizagem (AVA)", anc:"<b>D1 · 1.7 · b.i</b> · <b>D1 · 1.6 · a.i</b> · <b>D3 · 3.5 · a.ii</b>"},
+        {id:"q_5_5_f", rot:"f) Acessibilidade arquitetônica (rampas, elevadores, sinalização)", anc:"<b>D3 · 3.5 · a.iv</b> · <b>D1 · 1.3 · a.v</b>"},
+        {id:"q_5_5_g", rot:"g) Espaços de convivência e bem-estar", anc:"<b>D3 · 3.3 · d.i</b> · <b>D4-S · 4.6 · d.i</b>"},
+        {id:"q_5_5_h", rot:"h) Recursos digitais e ferramentas de IA aplicadas ao ensino", anc:"<b>D1 · 1.7 · f.ii</b> · <b>D3 · 3.4 · d.ii</b>"},
+        {id:"q_5_5_i", rot:"i) Realidade virtual ou aumentada e simulação nas atividades acadêmicas", anc:"<b>D1 · 1.7 · f.i</b> · <b>D4-S · 4.3 · f.ii</b>"}
+      ],
+      anc:"<b>D1 · 1.8 · d.ii</b> · <b>D3 · 3.5 · f.i</b> linha de base para a análise de lacuna do Anexo A.9" },
+    { id:"q_5_6", num:"5.6", txt:"A UNILEÃO oferece serviços de apoio ao estudante. Assinale aqueles sobre os quais você gostaria de receber informações", tipo:"check", obrig:true, min:1, grade:true,
+      nota:"Marque todas as opções que se aplicam.",
+      opts:["Apoio psicopedagógico e orientação de estudos","Acolhimento e apoio socioemocional","Nivelamento acadêmico",
+        "Orientação sobre bolsas e financiamento","Acessibilidade e adaptações","Mentoria e orientação de carreira",
+        "Não desejo informações neste momento"],
+      anc:"<b>D1 · 1.9 · b.i a b.vi</b> as seis linhas correspondem, uma a uma, aos incisos do atributo · <b>D1 · 1.9 · d.i</b>" },
+    { id:"q_5_6_1", num:"5.6.1", txt:"Antes de ingressar, qual era o seu grau de conhecimento sobre os serviços de apoio ao estudante oferecidos pela UNILEÃO?", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhum","5 conhecia bem"],
+      anc:"<b>D1 · 1.8 · c.i</b> políticas conhecidas pela comunidade acadêmica · <b>D1 · 1.9 · a.i</b> · <b>D1 · 1.10 · b.iv</b>" }
+  ]
+},
+
+/* ---------------------------------------------------------------- BLOCO VI */
+{
+  id:"b6", eyebrow:"Bloco VI", titulo:"Expectativas profissionais, extensão e internacionalização",
+  sub:"O que você espera do curso e o que pode dificultar sua caminhada.",
+  ancSecao:"Linha de base de demanda para extensão (<b>D1 · 1.1 · c</b> e <b>1.2 · e</b>), iniciação científica (<b>1.1 · b</b>), inovação (<b>1.1 · e.i</b>) e internacionalização (<b>1.14</b>)",
+  itens:[
+    { id:"q_6_1", num:"6.1", txt:"Pretende trabalhar na área do curso enquanto estuda?", tipo:"radio", obrig:true, grade:true,
+      opts:["Já trabalho","No 1º ano","Após a metade do curso","Não pretendo","Indeciso"],
+      anc:"<b>D1 · 1.10 · b.ii</b> convênios de estágio · <b>D1 · 1.10 · d.i</b> · <b>D4-N · 4.4 · a.i</b>" },
+    { id:"q_6_2", num:"6.2", txt:"Interesse em participar das seguintes oportunidades acadêmicas", tipo:"matriz", obrig:true,
+      escala:E5, extremos:["1 nenhum interesse","5 muito alto"],
+      linhas:[
+        {id:"q_6_2_a", rot:"a) Atividades de extensão com impacto social", anc:"<b>D1 · 1.1 · c.iii e c.iv</b> · <b>D1 · 1.2 · e.iii</b> · <b>D4-N · 4.3</b> · <b>D4-E · 4.10</b>"},
+        {id:"q_6_2_b", rot:"b) Iniciação científica e pesquisa", anc:"<b>D1 · 1.1 · b.i</b> · <b>D1 · 1.1 · g.i</b> · <b>D4-C · 4.3 · c.ii</b>"},
+        {id:"q_6_2_c", rot:"c) Inovação e empreendedorismo (incubadoras, empresa júnior, startups)", anc:"<b>D1 · 1.1 · e.i</b> · <b>D1 · 1.2 · h.iii</b> · <b>D1 · 1.10 · e.i</b> · <b>D4-N · 4.2</b>"},
+        {id:"q_6_2_d", rot:"d) Mobilidade acadêmica internacional (intercâmbio, dupla titulação)", anc:"<b>D1 · 1.14 · b.iv</b> · <b>D1 · 1.14 · c.ii</b> · <b>D1 · 1.14 · b.v</b>"}
+      ],
+      anc:"<b>D1 · 1.1 · b, c, e</b> · <b>D1 · 1.2 · e</b> · <b>D1 · 1.10 · e.i</b> · <b>D1 · 1.14 · b</b>" },
+    { id:"q_6_3", num:"6.3", txt:"Interesse em receber mentoria ou aconselhamento vocacional durante o curso", tipo:"radio", obrig:true, linha:true,
+      opts:["Sim","Talvez","Não"],
+      anc:"<b>D1 · 1.10 · c.i</b> correspondência literal com mentoria, projeto de vida ou aconselhamento vocacional · <b>D1 · 1.10 · c.ii</b>" },
+    { id:"q_6_4", num:"6.4", txt:"Importância dos temas transversais na sua formação", tipo:"matriz", obrig:true,
+      escala:E5, extremos:["1 pouco importante","5 muito importante"],
+      linhas:[
+        {id:"q_6_4_a", rot:TEMAS_TRANSVERSAIS[0], anc:"<b>D1 · 1.2 · g.i</b> · <b>D4-N · 4.1 · a</b> · <b>D4-E · 4.1 · c.iii e c.iv</b>"},
+        {id:"q_6_4_b", rot:TEMAS_TRANSVERSAIS[1], anc:"<b>D1 · 1.2 · g.ii e g.iii</b> · <b>D4-E · 4.1 · c.i e c.ii</b> · <b>D4-C · 4.1 · c.ii</b>"},
+        {id:"q_6_4_c", rot:TEMAS_TRANSVERSAIS[2], anc:"<b>D1 · 1.2 · g.i</b> · <b>D4-C · 4.1 · b.iii</b> · <b>D4-E · 4.1 · c.iii</b>"},
+        {id:"q_6_4_d", rot:TEMAS_TRANSVERSAIS[3], anc:"<b>D1 · 1.2 · g.iv</b> · <b>D4-E · 4.1 · a.iii e b.ii</b> · <b>D4-C · 4.1 · b.iii</b>"},
+        {id:"q_6_4_e", rot:TEMAS_TRANSVERSAIS[4], anc:"<b>D4-N · 4.1 · c</b> · <b>D4-C · 4.1 · c.i</b> · <b>D4-S · 4.1 · a.iv</b>"},
+        {id:"q_6_4_f", rot:TEMAS_TRANSVERSAIS[5], anc:"<b>D1 · 1.7 · f.ii</b> · <b>D3 · 3.4 · d.ii</b>"},
+        {id:"q_6_4_g", rot:TEMAS_TRANSVERSAIS[6], anc:"<b>D1 · 1.2 · g.ii</b> · <b>D1 · 1.9 · c.ii</b> · <b>D3 · 3.5 · a.iv</b>"}
+      ],
+      anc:"<b>D1 · 1.2 · g</b> o quadro reproduz, item a item, o rol do atributo" },
+    { id:"q_6_4_1", num:"6.4.1", txt:"Entre os temas listados em 6.4, assinale os dois que você considera mais importantes para a sua formação", tipo:"check", obrig:true, min:2, max:2, grade:true,
+      nota:"Escolha exatamente 2.", opts:TEMAS_TRANSVERSAIS,
+      anc:"<b>D1 · 1.2 · g</b> em formato de priorização. Controle do efeito-teto do quadro 6.4." },
+    { id:"q_6_5", num:"6.5", txt:"Na sua avaliação, quais fatores poderiam dificultar a conclusão do seu curso?", tipo:"check", obrig:true, min:1, max:3, grade:true,
+      nota:"Marque até 3 opções.",
+      opts:["Dificuldade financeira","Conciliação com o trabalho","Deslocamento e transporte","Responsabilidades familiares",
+        "Dificuldade de acompanhar o conteúdo","Dúvida sobre a escolha do curso","Questões de saúde","Não identifico dificuldades no momento"],
+      anc:"<b>D1 · 1.9 · d.ii</b> permanência e desempenho · <b>D1 · 1.9 · b.ii</b> · <b>D1 · 1.9 · b.i</b>" },
+    { id:"q_6_6", num:"6.6", txt:"Espaço aberto: principais expectativas, anseios e sugestões para a UNILEÃO em relação à sua formação", tipo:"textarea", obrig:false,
+      nota:"Opcional.",
+      anc:"<b>D1 · 1.8 · d.i</b> · <b>D1 · 1.8 · d.ii</b> oportunidades de melhoria contínua" }
+  ]
+},
+
+/* ---------------------------------------------------------------- CADERNO S */
+{
+  id:"cadS", caderno:"S", eyebrow:"Caderno S · área 09", titulo:"Saúde e Bem-Estar",
+  sub:"Perguntas específicas da sua área de formação.",
+  ancSecao:"<b>D4-S</b> objetos 4.1 a 4.8 da Dimensão 4 específica da área de Saúde e Bem-Estar",
+  itens:[
+    { id:"cad_S_1", num:"S.1", txt:"Você já teve experiência prévia, profissional, acadêmica ou voluntária, em serviços de saúde?", tipo:"radio", obrig:true,
+      opts:["Não","Sim, na rede pública","Sim, na rede privada","Sim, em ambas"],
+      anc:"<b>D4-S · 4.1 · b.i</b> inserção nas redes públicas de saúde · <b>D4-S · 4.6 · b.i</b> · <b>D1 · 1.9 · a.ii</b>" },
+    { id:"cad_S_2", num:"S.2", txt:"Grau de familiaridade com o Sistema Único de Saúde (SUS)", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhuma","5 elevada"],
+      anc:"<b>D4-S · 4.5 · a.iv</b> formação em serviço conforme plano de inserção na rede · <b>D4-S · 4.6 · b.i e b.ii</b>" },
+    { id:"cad_S_3", num:"S.3", txt:"Expectativa quanto a atividades práticas que envolvem contato direto com usuários", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 muito baixa","5 muito alta"],
+      anc:"<b>D4-S · 4.1 · b</b> · <b>D4-S · 4.1 · e.ii</b> · <b>D1 · 1.9 · b.v</b>" },
+
+    { id:"cad_S41a", num:"S.4.1.a", txt:"Expectativa quanto à inserção progressiva em unidades hospitalares e no internato", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 muito baixa","5 muito alta"], comp:"S41",
+      anc:"<b>D4-S · 4.8 · a e b</b> atenção terciária e complexo assistencial · <b>D4-S · 4.5 · c.ii</b>" },
+    { id:"cad_S41b", num:"S.4.1.b", txt:"Interesse em ingressar em programa de residência médica após a graduação", tipo:"radio", obrig:true, linha:true,
+      opts:["Sim","Talvez","Não","Ainda não sei"], comp:"S41",
+      anc:"<b>D4-S · 4.5 · e.i e e.ii</b> programas de residência médica e interação com residentes · <b>D1 · 1.10 · d.i</b>" },
+
+    { id:"cad_S42a", num:"S.4.2.a", txt:"Você possui formação ou atuação prévia como técnico ou auxiliar de enfermagem?", tipo:"radio", obrig:true,
+      opts:["Não","Sim, com formação","Sim, com formação e atuação"], comp:"S42",
+      anc:"<b>D1 · 1.9 · a.ii</b> · <b>D4-S · 4.1 · c.v</b> relação de docentes ou preceptores por estudante" },
+    { id:"cad_S42b", num:"S.4.2.b", txt:"Expectativa quanto à atuação em equipes multiprofissionais de saúde", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 muito baixa","5 muito alta"], comp:"S42",
+      anc:"<b>D4-S · 4.1 · e.i</b> atuação eficaz em equipes e grupos de trabalho · <b>D4-S · 4.5 · d.i</b>" },
+
+    { id:"cad_S43a", num:"S.4.3.a", txt:"Familiaridade com processos de reabilitação e com o cuidado à pessoa com deficiência", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhuma","5 elevada"], comp:"S43",
+      anc:"<b>D4-S · 4.1 · e.ii</b> integralidade individual e coletiva · <b>D1 · 1.9 · c.ii</b> · <b>D1 · 1.2 · g.ii</b>" },
+    { id:"cad_S43b", num:"S.4.3.b", txt:"Expectativa quanto a atividades em laboratórios de habilidades e simulação", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 muito baixa","5 muito alta"], comp:"S43",
+      anc:"<b>D4-S · 4.3 · b.i</b> capacitação nas competências das diferentes fases do curso · <b>D4-S · 4.3 · f.ii</b>" },
+
+    { id:"cad_S44a", num:"S.4.4.a", txt:"Expectativa quanto ao atendimento clínico a pacientes na clínica-escola", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 muito baixa","5 muito alta"], comp:"S44",
+      anc:"<b>D4-S · 4.1 · b e c</b> atividades práticas de ensino que envolvem usuário" },
+    { id:"cad_S44b", num:"S.4.4.b", txt:"Expectativa quanto a atividades pré-clínicas em laboratório, sem contato com usuário", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 muito baixa","5 muito alta"], comp:"S44",
+      anc:"<b>D4-S · 4.2 · b.ii e e.i</b> práticas que não envolvem usuário e seus planos de utilização" },
+
+    { id:"cad_S45a", num:"S.4.5.a", txt:"Expectativa quanto a atividades laboratoriais de análise e diagnóstico, sem contato direto com usuário", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 muito baixa","5 muito alta"], comp:"S45",
+      anc:"<b>D4-S · 4.2 · a e b</b> objeto integralmente dedicado às práticas que não envolvem usuário · <b>D4-S · 4.2 · c.iii e c.iv</b>" },
+    { id:"cad_S45b", num:"S.4.5.b", txt:"Qual área de atuação mais desperta seu interesse neste momento?", tipo:"radio", obrig:true, grade:true,
+      opts:["Análises clínicas e diagnóstico","Pesquisa e biotecnologia","Saúde pública e vigilância","Estética e áreas correlatas","Ainda não sei"], comp:"S45",
+      anc:"<b>D1 · 1.10 · d.i</b> trajetórias ocupacionais típicas · <b>D4-S · 4.1 · e.iii</b>" },
+
+    { id:"cad_S46a", num:"S.4.6.a", txt:"Experiência prévia com prática esportiva regular, treinamento ou atividade corporal orientada", tipo:"radio", obrig:true,
+      opts:["Não","Sim, como praticante","Sim, como praticante e monitor ou auxiliar"], comp:"S46",
+      anc:"<b>D1 · 1.9 · a.ii</b> · <b>D4-S · 4.1 · d.i</b> contexto de saúde e bem-estar da região" },
+    { id:"cad_S46b", num:"S.4.6.b", txt:"Expectativa quanto à atuação em promoção da saúde e prevenção em espaços coletivos e comunitários", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 muito baixa","5 muito alta"], comp:"S46",
+      anc:"<b>D4-S · 4.1 · e.ii</b> integralidade individual e coletiva · <b>D4-S · 4.6 · b.i e b.ii</b> atenção primária" }
+  ]
+},
+
+/* ---------------------------------------------------------------- CADERNO N */
+{
+  id:"cadN", caderno:"N", eyebrow:"Caderno N · área 04", titulo:"Negócios, Administração e Direito",
+  sub:"Perguntas específicas da sua área de formação.",
+  ancSecao:"<b>D4-N</b> objetos 4.1 a 4.5 da Dimensão 4 específica da área de Administração, Negócios e Direito",
+  itens:[
+    { id:"cad_N_1", num:"N.1", txt:"Você já teve experiência com atividade empreendedora ou negócio próprio, ainda que informal?", tipo:"radio", obrig:true,
+      opts:["Não","Sim, de forma informal","Sim, de forma formalizada"],
+      anc:"<b>D4-N · 4.2 · a e d.i</b> identificação de oportunidades e criação de soluções · <b>D1 · 1.1 · e.i</b>" },
+    { id:"cad_N_2", num:"N.2", txt:"Grau de familiaridade com o tema da sustentabilidade aplicada à sua área de formação", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhuma","5 elevada"],
+      anc:"<b>D4-N · 4.1 · a e b</b> sustentabilidade em objetivos, perfil, competências, conteúdos, metodologias e avaliação" },
+    { id:"cad_N_3", num:"N.3", txt:"Interesse em atuar em núcleo de prática profissional, empresa júnior, escritório modelo ou equivalente", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhum","5 muito alto"],
+      anc:"<b>D4-N · 4.2 · c.ii</b> empresas juniores e núcleo de práticas jurídicas · <b>D4-N · 4.5 · c.ii</b>" },
+
+    { id:"cad_N41a", num:"N.4.1.a", txt:"Experiência prévia em ambiente organizacional ou em função de gestão", tipo:"radio", obrig:true,
+      opts:["Não","Sim, em função operacional","Sim, em função de coordenação ou gestão"], comp:"N41",
+      anc:"<b>D1 · 1.9 · a.ii</b> · <b>D4-N · 4.4 · a.ii</b> vivências de tomada de decisão e inovação organizacional" },
+    { id:"cad_N41b", num:"N.4.1.b", txt:"Familiaridade com análise de dados e indicadores aplicados à gestão", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhuma","5 elevada"], comp:"N41",
+      anc:"<b>D4-N · 4.4 · c.i</b> competências de informação e digitais · <b>D4-N · 4.4 · c.iv</b>" },
+
+    { id:"cad_N42a", num:"N.4.2.a", txt:"Experiência prévia com rotinas contábeis, fiscais ou financeiras", tipo:"radio", obrig:true,
+      opts:["Não","Sim, em rotinas básicas","Sim, em rotinas técnicas"], comp:"N42",
+      anc:"<b>D1 · 1.9 · a.ii</b> · <b>D4-N · 4.4 · a.i</b> articulação entre teoria e prática" },
+    { id:"cad_N42b", num:"N.4.2.b", txt:"Interesse em preparar-se para exames e certificações externas da profissão, como o Exame de Suficiência", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhum","5 muito alto"], comp:"N42",
+      anc:"<b>D4-N · 4.4 · a.v</b> preparação para o exercício profissional, exames e certificações externas" },
+
+    { id:"cad_N43a", num:"N.4.3.a", txt:"Expectativa quanto à atuação no Núcleo de Prática Jurídica e na assistência jurídica à comunidade", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 muito baixa","5 muito alta"], comp:"N43",
+      anc:"<b>D4-N · 4.2 · c.ii</b> · <b>D4-N · 4.5 · c.i a c.iv</b> serviços que atendem às demandas da comunidade · <b>D4-N · 4.4 · c.ii</b>" },
+    { id:"cad_N43b", num:"N.4.3.b", txt:"Interesse em atividades de mediação, conciliação e resolução consensual de conflitos, inclusive em articulação com outros cursos", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhum","5 muito alto"], comp:"N43",
+      anc:"<b>D4-N · 4.4 · a.ii</b> mediação de conflitos · <b>D4-N · 4.4 · c.i</b>. Item pareado com C.4.b, de Psicologia." },
+    { id:"cad_N43c", num:"N.4.3.c", txt:"Interesse em preparar-se para o Exame de Ordem", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhum","5 muito alto"], comp:"N43",
+      anc:"<b>D4-N · 4.4 · a.v</b> exames e certificações externas · <b>D1 · 1.10 · e.ii</b>" }
+  ]
+},
+
+/* ---------------------------------------------------------------- CADERNO C */
+{
+  id:"cadC", caderno:"C", eyebrow:"Caderno C · área 03", titulo:"Ciências Sociais, Comunicação e Informação",
+  sub:"Perguntas específicas da sua área de formação.",
+  ancSecao:"<b>D4-C</b> objetos 4.1 a 4.5. O complemento C.4 capta a inserção em saúde, assistência social e Sistema de Garantia de Direitos, reconhecida no documento da área de Saúde.",
+  itens:[
+    { id:"cad_C_1", num:"C.1", txt:"Você já participou de alguma atividade de pesquisa, iniciação científica ou projeto investigativo?", tipo:"radio", obrig:true,
+      opts:["Não","Sim, na educação básica","Sim, em curso superior anterior"],
+      anc:"<b>D4-C · 4.3 · c.ii</b> projetos de iniciação científica · <b>D4-C · 4.3 · a.i</b> · <b>D1 · 1.1 · b.i</b>" },
+    { id:"cad_C_2", num:"C.2", txt:"Grau de familiaridade com leitura e interpretação de dados e indicadores sociais", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhuma","5 elevada"],
+      anc:"<b>D4-C · 4.1 · d.i</b> compreensão de dados e indicadores econômicos e sociais · <b>D4-C · 4.3 · b.i e b.iii</b>" },
+    { id:"cad_C_3", num:"C.3", txt:"Interesse em produzir e publicar trabalho acadêmico durante a graduação", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhum","5 muito alto"],
+      anc:"<b>D4-C · 4.3 · c.iii</b> incentivos à publicação científica discente · <b>D4-C · 4.3 · d.iv</b> · <b>D1 · 1.1 · g.ii</b>" },
+    { id:"cad_C4a", num:"C.4.a", txt:"Em quais cenários de prática profissional supervisionada você tem maior interesse neste momento?", tipo:"check", obrig:true, min:1, max:2, grade:true,
+      nota:"Marque até 2 opções.", comp:"C4",
+      opts:["Clínica e consultório","Serviços públicos de saúde e saúde mental","Assistência social e Sistema de Garantia de Direitos","Organizações e trabalho","Educação e escolas","Ainda não sei"],
+      anc:"<b>D4-C · 4.4 · b.iii</b> vivência em áreas profissionais diversas · <b>D4-C · 4.4 · c.ii</b> · <b>D4-S · 4.6 · b.i e f.i</b> cenários vinculados ao SGD" },
+    { id:"cad_C4b", num:"C.4.b", txt:"Interesse em atuação interdisciplinar com outros cursos, como em práticas de mediação de conflitos e projetos integrados", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhum","5 muito alto"], comp:"C4",
+      anc:"<b>D4-C · 4.4 · c.ii</b> colaboração em equipes multidisciplinares · <b>D4-N · 4.4 · c.i</b>. Item pareado com N.4.3.b, de Direito." },
+    { id:"cad_C4c", num:"C.4.c", txt:"Grau de familiaridade com políticas públicas de saúde mental, assistência social e direitos", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhuma","5 elevada"], comp:"C4",
+      anc:"<b>D4-C · 4.1 · a e c.ii</b> democracia, justiça social, cidadania, direitos humanos e equidade em políticas públicas" }
+  ]
+},
+
+/* ---------------------------------------------------------------- CADERNO E */
+{
+  id:"cadE", caderno:"E", eyebrow:"Caderno E · área 01", titulo:"Educação",
+  sub:"Perguntas específicas da formação docente.",
+  ancSecao:"<b>D4-E</b> objetos 4.1 a 4.11 da Dimensão 4 específica da área de Educação",
+  itens:[
+    { id:"cad_E_1", num:"E.1", txt:"Você já exerceu alguma atividade de ensino, monitoria, reforço escolar ou docência?", tipo:"radio", obrig:true,
+      opts:["Não","Sim, informalmente","Sim, formalmente"],
+      anc:"<b>D4-E · 4.8 · b.ii</b> realidades educacionais onde os futuros docentes atuarão · <b>D4-E · 4.8 · c.i</b> · <b>D1 · 1.9 · a.ii</b>" },
+    { id:"cad_E_2", num:"E.2", txt:"Interesse em participar de programas de iniciação à docência, como o PIBID ou equivalentes internos", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 nenhum","5 muito alto"],
+      anc:"<b>D4-E · 4.8 · d.ii</b> PIBID, programa interno de iniciação à docência ou programas de extensão · <b>D1 · 1.1 · b.i</b>" },
+    { id:"cad_E_3", num:"E.3", txt:"Você pretende atuar na Educação Básica após a conclusão do curso?", tipo:"radio", obrig:true, linha:true,
+      opts:["Sim","Não","Ainda não sei"],
+      anc:"<b>D4-E · 4.1 · a.v</b> e <b>4.8 · a.iv</b> objetivos do curso e perfil do egresso · <b>D1 · 1.11 · a.iii</b>" },
+    { id:"cad_E_4", num:"E.4", txt:"Experiência prévia com prática esportiva regular, treinamento ou atividade corporal orientada", tipo:"radio", obrig:true,
+      opts:["Não","Sim, como praticante","Sim, como praticante e monitor ou auxiliar"],
+      anc:"<b>D1 · 1.9 · a.ii</b>. Item de contexto do curso, sem ancoragem direta em qualificador de Dimensão 4." }
+  ]
+},
+
+/* ---------------------------------------------------------------- CADERNO V */
+{
+  id:"cadV", caderno:"V", eyebrow:"Caderno V · área 08", titulo:"Agricultura, Silvicultura, Pesca e Veterinária",
+  sub:"Perguntas específicas da sua área de formação.",
+  ancSecao:"Nenhum item deste caderno evidencia Dimensão 4. Ancoragem exclusiva nas Dimensões 1 a 3.",
+  caixas:[
+    { alerta:true, tit:"Advertência de ancoragem, uso interno da CPA", corpo:[
+      "O documento de Dimensão 4 da área geral 08 não foi processado por esta CPA, tendo sido submetido a consulta pública apenas em abril de 2026. Todos os itens deste caderno ancoram-se exclusivamente em qualificadores das Dimensões 1 a 3. Reescrever e reancorar assim que a versão consolidada da área for publicada."
+    ], soAuditoria:true }
+  ],
+  itens:[
+    { id:"cad_V_1", num:"V.1", txt:"Você já teve experiência prévia com animais, produção agropecuária ou serviços veterinários?", tipo:"check", obrig:true, min:1, grade:true,
+      nota:"Marque todas as opções que se aplicam.",
+      opts:["Não","Sim, com animais de companhia","Sim, com animais de produção ou meio rural","Sim, em clínica ou serviço veterinário"],
+      anc:"<b>D1 · 1.9 · a.ii</b> · <b>D1 · 1.1 · d.i</b> necessidades loco-regionais · SEM ancoragem em Dimensão 4" },
+    { id:"cad_V_2", num:"V.2", txt:"Expectativa quanto a atividades práticas em hospital veterinário, laboratórios e atividades a campo", tipo:"escala", obrig:true,
+      escala:E5, extremos:["1 muito baixa","5 muito alta"],
+      anc:"<b>D1 · 1.3 · a.vi</b> · <b>D3 · 3.3 · a.i</b> · <b>D3 · 3.4 · a.i</b> · SEM ancoragem em Dimensão 4" },
+    { id:"cad_V_3", num:"V.3", txt:"Qual área de atuação mais desperta seu interesse neste momento?", tipo:"radio", obrig:true, grade:true,
+      opts:["Clínica e cirurgia de pequenos animais","Grandes animais e produção","Inspeção de produtos e saúde pública","Pesquisa e diagnóstico laboratorial","Animais silvestres","Ainda não sei"],
+      anc:"<b>D1 · 1.10 · d.i</b> trajetórias ocupacionais típicas · <b>D1 · 1.11 · a.iii</b> · SEM ancoragem em Dimensão 4" }
+  ]
+},
+
+/* ---------------------------------------------------------------- MÓDULO B */
+{
+  id:"modB", modalidades:["EaD","Híbrido"], eyebrow:"Módulo B", titulo:"Modalidades a distância e híbrida",
+  sub:"Aparece porque você indicou oferta a distância ou híbrida.",
+  ancSecao:"<b>D1 · 1.2 · f.ii</b> familiarização com a modalidade a distância · <b>D1 · 1.6</b> aprendizagem mediada por tecnologias",
+  itens:[
+    { id:"mod_B_1", num:"B.1", txt:"Polo de apoio presencial ao qual está vinculado", tipo:"texto", obrig:false,
+      nota:"Deixe em branco se não se aplica.",
+      anc:"<b>D3 · 3.3 · a.i</b> ambientes de aprendizagem inclusive nos polos · <b>D3 · 3.4 · a.i</b> · <b>D1 · 1.6 · e.v</b>" },
+    { id:"mod_B_2", num:"B.2", txt:"Experiência prévia com estudo a distância", tipo:"radio", obrig:true, grade:true,
+      opts:["Nenhuma","Cursos livres ou de curta duração","Disciplinas isoladas","Curso completo a distância"],
+      anc:"<b>D1 · 1.2 · f.ii</b> mecanismos de familiarização com a modalidade a distância · <b>D1 · 1.6 · a.iv</b>" },
+    { id:"mod_B_3", num:"B.3", txt:"Autoavaliação de autonomia para o estudo a distância", tipo:"matriz", obrig:true,
+      escala:E5, extremos:["1 muito baixa","5 muito alta"],
+      linhas:[
+        {id:"mod_B_3_a", rot:"a) Organizar meu tempo de estudo sem supervisão direta", anc:"<b>D1 · 1.3 · c.iii</b> · <b>D1 · 1.3 · f.i</b>"},
+        {id:"mod_B_3_b", rot:"b) Utilizar o Ambiente Virtual de Aprendizagem e seus recursos", anc:"<b>D1 · 1.7 · c.ii</b> · <b>D1 · 1.2 · f.ii</b> · <b>D3 · 3.5 · a.ii</b>"},
+        {id:"mod_B_3_c", rot:"c) Buscar ajuda de docentes ou mediadores quando encontro dificuldade", anc:"<b>D1 · 1.6 · b.ii</b> acompanhamento no processo formativo · <b>D1 · 1.9 · b.ii</b>"},
+        {id:"mod_B_3_d", rot:"d) Manter regularidade de estudo ao longo do semestre", anc:"<b>D1 · 1.6 · a.iv</b> engajamento · <b>D1 · 1.9 · d.ii</b>"}
+      ],
+      anc:"<b>D1 · 1.3 · c.iii</b> ganho progressivo de autonomia · <b>D1 · 1.3 · f.i e f.ii</b>" }
+  ]
+},
+
+/* ---------------------------------------------------------------- REVISÃO */
+{
+  id:"revisao", eyebrow:"Última etapa", titulo:"Revisão e envio",
+  sub:"Confira o enquadramento do seu curso e envie. Depois do envio não é possível editar as respostas por esta tela.",
+  itens:[]
+}
+];
+
+/* ===========================================================================
+   5. ESTADO
+   =========================================================================== */
+const respostas = {};
+let secaoAtual = 0;
+let secoesVisiveis = [];
+let enquadramento = null;
+let protocolo = null;
+let payloadFinal = null;
+
+/* ===========================================================================
+   6. UTILITÁRIOS
+   =========================================================================== */
+const el = (t,p={})=>{const n=document.createElement(t);for(const k in p){if(k==="html")n.innerHTML=p[k];else if(k==="txt")n.textContent=p[k];else if(k==="cls")n.className=p[k];else n.setAttribute(k,p[k]);}return n;};
+const esc = s => String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+function uuid(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return "r-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,10);
+}
+function agoraISO(){ return new Date().toISOString(); }
+function dataBR(){ return new Date().toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"}); }
+// rolagem tolerante: alguns ambientes de teste e navegadores antigos não a implementam
+function aoTopo(){ try{ window.scrollTo({top:0,behavior:"smooth"}); }catch(e){ try{ window.scrollTo(0,0); }catch(_){} } }
+function rolarAte(n){ if(n && typeof n.scrollIntoView==="function"){ try{ rolarAte(n); }catch(e){} } }
+
+/* ===========================================================================
+   7. CONDIÇÕES
+   =========================================================================== */
+function itemVisivel(item){
+  if(!item.cond) return true;
+  const testa = r => {
+    const v = respostas[r.campo];
+    if(Array.isArray(v)) return v.some(x=>r.em.includes(x));
+    return r.em.includes(v);
+  };
+  if(item.cond.qualquer) return item.cond.qualquer.some(testa);
+  return testa(item.cond);
+}
+function complementoAtivo(item){
+  if(!item.comp) return true;
+  return enquadramento && enquadramento.comp === item.comp;
+}
+function secaoVisivel(sec){
+  if(sec.caderno) return !!(enquadramento && enquadramento.caderno === sec.caderno);
+  if(sec.modalidades) return sec.modalidades.includes(respostas.modalidade);
+  return true;
+}
+function campoVisivel(item){
+  if(item.id === "grau"){
+    const c = CURSOS.find(x=>x.nome === respostas.curso);
+    return !!(c && c.variantes);
+  }
+  return itemVisivel(item) && complementoAtivo(item);
+}
+function itemObrigatorio(item){
+  if(!item.obrig) return false;
+  if(item.id === "grau") return campoVisivel(item);
+  return true;
+}
+
+/* ===========================================================================
+   8. RENDERIZAÇÃO
+   =========================================================================== */
+function renderOpcoes(item, tipoInput){
+  const fs = el("fieldset");
+  fs.appendChild(el("legend",{cls:"pular",txt:item.txt}));
+  const wrap = el("div",{cls:item.grade?"grade2":(item.linha?"":"")});
+  item.opts.forEach((o,i)=>{
+    const lab = el("label",{cls:"opcao"});
+    const inp = el("input",{type:tipoInput,name:tipoInput==="checkbox"?item.id+"[]":item.id,value:o,id:item.id+"_"+i});
+    if(tipoInput==="checkbox"){ if((respostas[item.id]||[]).includes(o)) {inp.checked=true;lab.classList.add("marcada");} }
+    else { if(respostas[item.id]===o){inp.checked=true;lab.classList.add("marcada");} }
+    inp.addEventListener("change",()=>{
+      if(tipoInput==="checkbox"){
+        const marcados = [...wrap.querySelectorAll("input:checked")].map(x=>x.value);
+        if(item.max && marcados.length>item.max){ inp.checked=false; avisarLimite(item); return; }
+        respostas[item.id]=[...wrap.querySelectorAll("input:checked")].map(x=>x.value);
+        wrap.querySelectorAll(".opcao").forEach(l=>l.classList.toggle("marcada",l.querySelector("input").checked));
+      }else{
+        respostas[item.id]=o;
+        wrap.querySelectorAll(".opcao").forEach(l=>l.classList.remove("marcada"));
+        lab.classList.add("marcada");
+      }
+      aoResponder(item);
+    });
+    lab.appendChild(inp); lab.appendChild(el("span",{txt:o}));
+    wrap.appendChild(lab);
+  });
+  fs.appendChild(wrap);
+  return fs;
+}
+function avisarLimite(item){
+  const box = document.getElementById("erro_"+item.id);
+  if(box){ box.textContent = "Você já marcou o máximo de "+item.max+" opções. Desmarque uma para escolher outra."; }
+}
+function renderPastilhas(nome, escala, valorAtual, largas, aoMudar, rotuloAcess){
+  const fs = el("fieldset");
+  fs.appendChild(el("legend",{cls:"pular",txt:rotuloAcess||nome}));
+  const box = el("div",{cls:"pastilhas"});
+  escala.forEach((v,i)=>{
+    const p = el("label",{cls:"pastilha"+(largas?" larga":"")});
+    const inp = el("input",{type:"radio",name:nome,value:v,id:nome+"_"+i});
+    if(valorAtual===v) inp.checked=true;
+    inp.addEventListener("change",()=>aoMudar(v));
+    p.appendChild(inp); p.appendChild(el("span",{txt:v}));
+    box.appendChild(p);
+  });
+  fs.appendChild(box);
+  return fs;
+}
+function renderItem(item){
+  const div = el("div",{cls:"item",id:"item_"+item.id});
+  if(item.tipo==="rota"){
+    div.className="item";
+    div.appendChild(el("div",{cls:"item-num",txt:"›"}));
+    const c=el("div",{cls:"item-corpo"});
+    c.appendChild(el("div",{cls:"caixa rota",html:esc(item.txt)}));
+    div.appendChild(c);
+    return div;
+  }
+  div.appendChild(el("div",{cls:"item-num",txt:item.num||""}));
+  const corpo = el("div",{cls:"item-corpo"});
+  const p = el("p",{cls:"enunciado",html:esc(item.txt)+(itemObrigatorio(item)?'<span class="obrig" aria-hidden="true">*</span>':"")});
+  corpo.appendChild(p);
+  if(item.nota) corpo.appendChild(el("p",{cls:"nota",txt:item.nota}));
+  const resp = el("div",{cls:"resp"});
+
+  switch(item.tipo){
+    case "radio": resp.appendChild(renderOpcoes(item,"radio")); break;
+    case "check": resp.appendChild(renderOpcoes(item,"checkbox")); break;
+    case "texto": case "email": {
+      const inp = el("input",{type:item.tipo==="email"?"email":"text",name:item.id,value:respostas[item.id]||"",
+        "aria-label":item.txt, autocomplete:item.tipo==="email"?"email":"off"});
+      inp.addEventListener("input",()=>{respostas[item.id]=inp.value.trim();});
+      inp.addEventListener("change",()=>aoResponder(item));
+      resp.appendChild(inp); break;
+    }
+    case "numero": {
+      const linha = el("div",{cls:"rank-linha"});
+      const inp = el("input",{type:"number",name:item.id,class:"mini",value:respostas[item.id]||"",
+        min:item.min??0,max:item.max??999,"aria-label":item.txt,inputmode:"numeric"});
+      inp.addEventListener("input",()=>{respostas[item.id]=inp.value;});
+      const box = el("div"); box.style.display="flex"; box.style.gap=".6rem"; box.style.alignItems="center";
+      inp.style.maxWidth="7rem";
+      box.appendChild(inp);
+      if(item.sufixo) box.appendChild(el("span",{txt:item.sufixo,style:"font-size:.9rem;color:var(--tinta-media)"}));
+      resp.appendChild(box); break;
+    }
+    case "select": {
+      const s = el("select",{name:item.id,"aria-label":item.txt});
+      s.appendChild(el("option",{value:"",txt:"Selecione"}));
+      item.opts.forEach(o=>{const op=el("option",{value:o,txt:o});if(respostas[item.id]===o)op.selected=true;s.appendChild(op);});
+      s.addEventListener("change",()=>{respostas[item.id]=s.value;aoResponder(item);});
+      resp.appendChild(s); break;
+    }
+    case "textarea": {
+      const t = el("textarea",{name:item.id,"aria-label":item.txt,rows:"4"});
+      t.value = respostas[item.id]||"";
+      t.addEventListener("input",()=>{respostas[item.id]=t.value;});
+      resp.appendChild(t); break;
+    }
+    case "escala": {
+      if(item.extremos){
+        const leg = el("p",{cls:"escala-leg"});
+        leg.appendChild(el("span",{txt:item.extremos[0]}));
+        leg.appendChild(el("span",{txt:item.extremos[1]}));
+        resp.appendChild(leg);
+      }
+      resp.appendChild(renderPastilhas(item.id,item.escala,respostas[item.id],false,
+        v=>{respostas[item.id]=v;aoResponder(item);},item.txt));
+      break;
+    }
+    case "matriz": {
+      if(item.extremos){
+        const leg = el("p",{cls:"escala-leg"});
+        leg.appendChild(el("span",{txt:item.extremos[0]}));
+        leg.appendChild(el("span",{txt:item.extremos[1]}));
+        resp.appendChild(leg);
+      }
+      item.linhas.forEach(l=>{
+        const lb = el("div",{cls:"linha-m"});
+        lb.appendChild(el("p",{cls:"linha-m-rot",txt:l.rot}));
+        lb.appendChild(renderPastilhas(l.id,item.escala,respostas[l.id],!!item.largas,
+          v=>{respostas[l.id]=v;aoResponder(item);},l.rot));
+        if(MODO_AUDITORIA && l.anc) lb.appendChild(el("div",{cls:"item-anc",html:l.anc}));
+        resp.appendChild(lb);
+      });
+      break;
+    }
+    case "rank3": {
+      ["1º","2º","3º"].forEach((ord,i)=>{
+        const campo = item.id+"_"+(i+1);
+        const linha = el("div",{cls:"rank-linha"});
+        linha.appendChild(el("span",{cls:"rank-ord",txt:ord}));
+        const s = el("select",{name:campo,"aria-label":ord+" fator mais decisivo"});
+        s.appendChild(el("option",{value:"",txt:"Selecione"}));
+        item.opts.forEach(o=>{const op=el("option",{value:o,txt:o});if(respostas[campo]===o)op.selected=true;s.appendChild(op);});
+        s.addEventListener("change",()=>{
+          const outros = [1,2,3].filter(n=>n!==i+1).map(n=>respostas[item.id+"_"+n]);
+          if(s.value && outros.includes(s.value)){
+            const box=document.getElementById("erro_"+item.id);
+            if(box) box.textContent="Cada fator só pode aparecer uma vez. Escolha outro para esta posição.";
+            s.value = respostas[campo]||""; return;
+          }
+          respostas[campo]=s.value; aoResponder(item);
+        });
+        linha.appendChild(s);
+        resp.appendChild(linha);
+      });
+      break;
+    }
+  }
+  corpo.appendChild(resp);
+  corpo.appendChild(el("p",{cls:"erro-msg",id:"erro_"+item.id,role:"alert"}));
+  div.appendChild(corpo);
+  if(MODO_AUDITORIA && item.anc) div.appendChild(el("div",{cls:"item-anc",html:"<b>ANCORAGEM</b> "+item.anc}));
+  return div;
+}
+
+function renderSecao(sec){
+  const s = el("section",{cls:"secao",id:"sec_"+sec.id,"aria-labelledby":"tit_"+sec.id});
+  const cab = el("div",{cls:"secao-cab"});
+  if(sec.eyebrow) cab.appendChild(el("p",{cls:"secao-eyebrow",txt:sec.eyebrow}));
+  cab.appendChild(el("h2",{cls:"secao-tit",id:"tit_"+sec.id,txt:sec.titulo}));
+  if(sec.sub) cab.appendChild(el("p",{cls:"secao-sub",txt:sec.sub}));
+  s.appendChild(cab);
+
+  if(MODO_AUDITORIA && sec.ancSecao){
+    const b = el("div",{cls:"caixa"});
+    b.appendChild(el("h3",{txt:"Ancoragem predominante da seção"}));
+    b.appendChild(el("p",{html:sec.ancSecao}));
+    s.appendChild(b);
+  }
+  (sec.caixas||[]).forEach(cx=>{
+    if(cx.soAuditoria && !MODO_AUDITORIA) return;
+    const b = el("div",{cls:"caixa"+(cx.alerta?" alerta":"")});
+    if(cx.tit) b.appendChild(el("h3",{txt:cx.tit}));
+    cx.corpo.forEach(t=>b.appendChild(el("p",{txt:t})));
+    s.appendChild(b);
+  });
+
+  if(sec.id === "revisao"){
+    s.appendChild(fichaEnquadramento());
+    s.appendChild(el("div",{cls:"caixa",html:
+      "<h3>Antes de enviar</h3><p>Use <strong>Anterior</strong> para voltar e corrigir qualquer resposta. "+
+      "Ao clicar em <strong>Enviar respostas</strong>, o questionário é registrado e um número de protocolo é gerado.</p>"}));
+  }else{
+    const cont = el("div",{id:"itens_"+sec.id});
+    sec.itens.forEach(it=>cont.appendChild(renderItem(it)));
+    s.appendChild(cont);
+  }
+  return s;
+}
+
+function fichaEnquadramento(){
+  const f = el("div",{cls:"ficha",id:"ficha"});
+  f.appendChild(el("div",{cls:"ficha-cab",txt:"Ficha de enquadramento"}));
+  const dl = el("dl");
+  const par = (r,v,vazio)=>{ dl.appendChild(el("dt",{txt:r})); dl.appendChild(el("dd",{cls:vazio?"vazio":"",txt:v})); };
+  par("Curso", respostas.curso || "não informado", !respostas.curso);
+  par("Grau", (enquadramento && enquadramento.grau) || "não informado", !(enquadramento&&enquadramento.grau));
+  par("Área geral CINE", (enquadramento && AREAS[enquadramento.area]) || "depende do curso e do grau", !(enquadramento&&enquadramento.area));
+  par("Caderno aplicado", (enquadramento && enquadramento.caderno) ? "Caderno "+enquadramento.caderno : "nenhum", !(enquadramento&&enquadramento.caderno));
+  par("Modalidade", respostas.modalidade || "não informada", !respostas.modalidade);
+  par("Turno", respostas.turno || "não informado", !respostas.turno);
+  par("Data", dataBR(), false);
+  f.appendChild(dl);
+  return f;
+}
+
+/* ===========================================================================
+   9. RECÁLCULO E NAVEGAÇÃO
+   =========================================================================== */
+function recalcular(){
+  enquadramento = respostas.curso ? resolverEnquadramento(respostas.curso, respostas.grau) : null;
+  if(enquadramento && enquadramento.indefinido) enquadramento = { curso:enquadramento.curso, indefinido:true };
+  secoesVisiveis = SECOES.filter(secaoVisivel);
+
+  SECOES.forEach(sec=>{
+    const nodo = document.getElementById("sec_"+sec.id);
+    if(!nodo) return;
+    const visivel = secoesVisiveis.includes(sec);
+    nodo.dataset.disponivel = visivel ? "1" : "0";
+    sec.itens.forEach(it=>{
+      const n = document.getElementById("item_"+it.id);
+      if(!n) return;
+      const mostrar = campoVisivel(it);
+      n.classList.toggle("oculto", !mostrar);
+      const marca = n.querySelector(".obrig");
+      if(marca) marca.style.display = itemObrigatorio(it) ? "" : "none";
+    });
+  });
+
+  const f = document.getElementById("ficha");
+  if(f) f.replaceWith(fichaEnquadramento());
+  desenharRegua();
+  mostrarSecao(Math.min(secaoAtual, secoesVisiveis.length-1), false);
+}
+
+function aoResponder(item){
+  const box = document.getElementById("erro_"+item.id);
+  if(box) box.textContent = "";
+  const n = document.getElementById("item_"+item.id);
+  if(n) n.classList.remove("invalido");
+  if(["curso","grau","modalidade","q_5_consent","q_5_1","q_5_1_1"].includes(item.id)) recalcular();
+}
+
+function desenharRegua(){
+  const r = document.getElementById("regua");
+  r.innerHTML = "";
+  secoesVisiveis.forEach((sec,i)=>{
+    const seg = el("div",{cls:"seg"+(i<secaoAtual?" feita":"")+(i===secaoAtual?" atual":"")});
+    seg.title = sec.titulo;
+    r.appendChild(seg);
+  });
+  const sec = secoesVisiveis[secaoAtual];
+  document.getElementById("reguaNome").textContent = sec ? ((sec.eyebrow?sec.eyebrow+" · ":"")+sec.titulo) : "";
+  document.getElementById("reguaConta").textContent = "Seção "+(secaoAtual+1)+" de "+secoesVisiveis.length;
+  document.getElementById("barraConta").textContent = (secaoAtual+1)+" de "+secoesVisiveis.length;
+}
+
+function mostrarSecao(i, rolar=true){
+  secaoAtual = Math.max(0, Math.min(i, secoesVisiveis.length-1));
+  document.querySelectorAll(".secao").forEach(n=>n.classList.remove("ativa"));
+  const sec = secoesVisiveis[secaoAtual];
+  if(sec) document.getElementById("sec_"+sec.id).classList.add("ativa");
+  document.getElementById("btnAnterior").disabled = secaoAtual===0;
+  document.getElementById("btnProximo").textContent = (sec && sec.id==="revisao") ? "Enviar respostas" : "Próximo";
+  desenharRegua();
+  if(rolar) aoTopo();
+}
+
+/* ===========================================================================
+   10. VALIDAÇÃO
+   =========================================================================== */
+function validarSecao(sec){
+  const faltas = [];
+  sec.itens.forEach(item=>{
+    if(!campoVisivel(item) || !itemObrigatorio(item)) return;
+    const box = document.getElementById("erro_"+item.id);
+    const n = document.getElementById("item_"+item.id);
+    let msg = "";
+    if(item.tipo==="check"){
+      const v = respostas[item.id]||[];
+      if(v.length < (item.min||1)) msg = item.min>1 ? "Escolha "+item.min+" opções." : "Escolha ao menos uma opção.";
+      else if(item.max && v.length>item.max) msg = "Escolha no máximo "+item.max+" opções.";
+    }else if(item.tipo==="matriz"){
+      const faltando = item.linhas.filter(l=>!respostas[l.id]);
+      if(faltando.length) msg = "Responda todas as linhas. Faltam "+faltando.length+".";
+    }else if(item.tipo==="rank3"){
+      const v=[1,2,3].map(k=>respostas[item.id+"_"+k]);
+      if(v.some(x=>!x)) msg = "Escolha e ordene três fatores.";
+      else if(new Set(v).size<3) msg = "Não repita o mesmo fator.";
+    }else if(item.tipo==="email"){
+      const v=(respostas[item.id]||"").trim();
+      if(!v) msg="Informe seu e-mail institucional.";
+      else if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) msg="Verifique o formato do e-mail.";
+    }else if(item.tipo==="numero"){
+      const v=respostas[item.id];
+      if(v==="" || v===undefined || v===null) msg="Informe um número.";
+      else if(item.min!==undefined && Number(v)<item.min) msg="Valor mínimo: "+item.min+".";
+      else if(item.max!==undefined && Number(v)>item.max) msg="Valor máximo: "+item.max+".";
+    }else{
+      if(!respostas[item.id] || String(respostas[item.id]).trim()==="") msg="Este campo é obrigatório.";
+    }
+    if(msg){
+      if(box) box.textContent = msg;
+      if(n) n.classList.add("invalido");
+      faltas.push({item, msg});
+    }else{
+      if(box) box.textContent = "";
+      if(n) n.classList.remove("invalido");
+    }
+  });
+  return faltas;
+}
+function mostrarResumoErro(faltas){
+  const cx = document.getElementById("resumoErro");
+  const li = document.getElementById("listaErro");
+  if(!faltas.length){ cx.classList.add("oculto"); return; }
+  li.innerHTML="";
+  faltas.forEach(f=>{
+    const item = el("li");
+    const a = el("a",{href:"#item_"+f.item.id, txt:(f.item.num? f.item.num+" ":"")+f.item.txt+" — "+f.msg});
+    a.addEventListener("click",ev=>{ev.preventDefault();
+      const n=document.getElementById("item_"+f.item.id);
+      rolarAte(n);
+      const foco=n.querySelector("input,select,textarea"); if(foco) foco.focus({preventScroll:true});
+    });
+    item.appendChild(a); li.appendChild(item);
+  });
+  cx.classList.remove("oculto");
+  cx.focus();
+}
+
+/* ===========================================================================
+   11. MONTAGEM DO PAYLOAD, ENVIO E ARQUIVOS
+   =========================================================================== */
+function montarPayload(){
+  const dados = {};
+  SECOES.forEach(sec=>{
+    if(!secaoVisivel(sec)) return;
+    sec.itens.forEach(item=>{
+      if(item.tipo==="rota") return;
+      if(!campoVisivel(item)) return;
+      if(item.tipo==="matriz"){ item.linhas.forEach(l=>{ dados[l.id]=respostas[l.id]??""; }); }
+      else if(item.tipo==="rank3"){ [1,2,3].forEach(k=>{ dados[item.id+"_"+k]=respostas[item.id+"_"+k]??""; }); }
+      else if(item.tipo==="check"){ dados[item.id]=(respostas[item.id]||[]).join("; "); }
+      else { dados[item.id]=respostas[item.id]??""; }
+    });
+  });
+  return {
+    meta:{
+      id_resposta: protocolo,
+      timestamp: agoraISO(),
+      instrumento: CONFIG.NOME_INSTRUMENTO,
+      versao_instrumento: CONFIG.VERSAO_INSTRUMENTO,
+      semestre: CONFIG.SEMESTRE,
+      curso: respostas.curso||"",
+      grau: (enquadramento&&enquadramento.grau)||"",
+      area_geral_cine: (enquadramento&&AREAS[enquadramento.area])||"",
+      caderno_aplicado: (enquadramento&&enquadramento.caderno)||"",
+      complemento_aplicado: (enquadramento&&enquadramento.comp)||"",
+      modalidade: respostas.modalidade||"",
+      turno: respostas.turno||"",
+      modulo_ead_aplicado: ["EaD","Híbrido"].includes(respostas.modalidade) ? "sim":"nao"
+    },
+    respostas: dados
+  };
+}
+function paraCSV(p){
+  const linha = Object.assign({}, p.meta, p.respostas);
+  const cabec = Object.keys(linha);
+  const cel = v => '"'+String(v??"").replace(/"/g,'""')+'"';
+  return "\uFEFF"+cabec.map(cel).join(";")+"\r\n"+cabec.map(k=>cel(linha[k])).join(";")+"\r\n";
+}
+function baixar(nome, conteudo, tipo){
+  const blob = new Blob([conteudo],{type:tipo});
+  const a = el("a",{href:URL.createObjectURL(blob),download:nome});
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+}
+function nomeArquivo(ext){
+  const c = (respostas.curso||"curso").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]+/g,"-");
+  return "ingressante_"+c+"_"+(respostas.matricula||"sem-matricula")+"."+ext;
+}
+async function enviarParaEndpoint(p){
+  // text/plain evita a requisição preflight de CORS. Troque para application/json
+  // se o seu endpoint estiver preparado para responder ao preflight.
+  const r = await fetch(CONFIG.ENDPOINT,{
+    method:"POST", mode:"cors", redirect:"follow",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body: JSON.stringify(p)
+  });
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  return true;
+}
+async function finalizar(){
+  protocolo = uuid();
+  payloadFinal = montarPayload();
+  let status = "";
+  const podeEnviar = CONFIG.ENDPOINT && (CONFIG.MODO_ENVIO==="endpoint"||CONFIG.MODO_ENVIO==="ambos");
+  let enviou = false;
+  if(podeEnviar){
+    try{ await enviarParaEndpoint(payloadFinal); enviou = true;
+      status = "Suas respostas foram enviadas ao servidor da CPA.";
+    }catch(e){
+      status = "Não foi possível enviar ao servidor agora. Baixe o arquivo abaixo e entregue à CPA para que nada se perca.";
+    }
+  }
+  const deveBaixar = CONFIG.MODO_ENVIO==="download" || (!enviou && CONFIG.MODO_ENVIO!=="endpoint") || (!CONFIG.ENDPOINT);
+  if(deveBaixar){
+    if(CONFIG.FORMATO_DOWNLOAD==="json"||CONFIG.FORMATO_DOWNLOAD==="ambos")
+      baixar(nomeArquivo("json"), JSON.stringify(payloadFinal,null,2), "application/json;charset=utf-8");
+    if(CONFIG.FORMATO_DOWNLOAD==="csv"||CONFIG.FORMATO_DOWNLOAD==="ambos")
+      baixar(nomeArquivo("csv"), paraCSV(payloadFinal), "text/csv;charset=utf-8");
+    if(!status) status = "Suas respostas foram salvas em arquivo neste dispositivo.";
+  }
+  document.getElementById("form").hidden = true;
+  document.getElementById("barra").hidden = true;
+  document.querySelector(".regua").hidden = true;
+  document.getElementById("resumoErro").classList.add("oculto");
+  document.getElementById("fimStatus").textContent = status;
+  document.getElementById("fimProtocolo").textContent = protocolo;
+  const fim = document.getElementById("telaFim");
+  fim.hidden = false; rolarAte(fim); aoTopo();
+}
+
+/* ===========================================================================
+   12. RASCUNHO EM ARQUIVO
+   Sem uso de armazenamento do navegador: o rascunho é um arquivo JSON que o
+   estudante ou o aplicador guarda e recarrega.
+   =========================================================================== */
+function salvarRascunho(){
+  const r = { __rascunho:true, versao:CONFIG.VERSAO_INSTRUMENTO, salvo_em:agoraISO(), respostas };
+  baixar("rascunho_"+nomeArquivo("json"), JSON.stringify(r,null,2), "application/json;charset=utf-8");
+}
+function carregarRascunho(arquivo){
+  const fr = new FileReader();
+  fr.onload = ()=>{
+    try{
+      const r = JSON.parse(fr.result);
+      const fonte = r.respostas || r;
+      Object.keys(respostas).forEach(k=>delete respostas[k]);
+      Object.assign(respostas, fonte);
+      document.getElementById("secoes").innerHTML="";
+      SECOES.forEach(sec=>document.getElementById("secoes").appendChild(renderSecao(sec)));
+      secaoAtual = 0;
+      recalcular();
+    }catch(e){
+      alert("Não foi possível ler este arquivo. Verifique se é o rascunho gerado por este questionário.");
+    }
+  };
+  fr.readAsText(arquivo);
+}
+
+/* ===========================================================================
+   13. INICIALIZAÇÃO
+   =========================================================================== */
+(function iniciar(){
+  document.getElementById("hSemestre").textContent = CONFIG.SEMESTRE;
+  document.getElementById("hData").textContent = dataBR();
+  if(MODO_AUDITORIA) document.getElementById("seloAuditoria").hidden = false;
+
+  const cont = document.getElementById("secoes");
+  SECOES.forEach(sec=>cont.appendChild(renderSecao(sec)));
+  recalcular();
+  mostrarSecao(0,false);
+
+  document.getElementById("btnProximo").addEventListener("click",async ()=>{
+    const sec = secoesVisiveis[secaoAtual];
+    const faltas = validarSecao(sec);
+    mostrarResumoErro(faltas);
+    if(faltas.length) return;
+    if(sec.id==="revisao"){
+      // revalida tudo antes de enviar
+      const todas = [];
+      secoesVisiveis.forEach(s=>todas.push(...validarSecao(s)));
+      if(todas.length){
+        const primeira = secoesVisiveis.findIndex(s=>s.itens.some(i=>todas.some(f=>f.item.id===i.id)));
+        mostrarSecao(primeira>=0?primeira:0);
+        mostrarResumoErro(todas);
+        return;
+      }
+      document.getElementById("btnProximo").disabled = true;
+      await finalizar();
+      return;
+    }
+    mostrarSecao(secaoAtual+1);
+  });
+  document.getElementById("btnAnterior").addEventListener("click",()=>{
+    document.getElementById("resumoErro").classList.add("oculto");
+    mostrarSecao(secaoAtual-1);
+  });
+  document.getElementById("btnRascunhoBaixar").addEventListener("click",salvarRascunho);
+  document.getElementById("btnRascunhoCarregar").addEventListener("click",()=>document.getElementById("inputRascunho").click());
+  document.getElementById("inputRascunho").addEventListener("change",e=>{ if(e.target.files[0]) carregarRascunho(e.target.files[0]); });
+  document.getElementById("btnBaixarJson").addEventListener("click",()=>{ if(payloadFinal) baixar(nomeArquivo("json"),JSON.stringify(payloadFinal,null,2),"application/json;charset=utf-8"); });
+  document.getElementById("btnBaixarCsv").addEventListener("click",()=>{ if(payloadFinal) baixar(nomeArquivo("csv"),paraCSV(payloadFinal),"text/csv;charset=utf-8"); });
+  document.getElementById("form").addEventListener("submit",e=>e.preventDefault());
+})();
+</script>
+</body>
+</html>
